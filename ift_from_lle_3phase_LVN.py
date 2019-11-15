@@ -269,7 +269,7 @@ def calculate_IFT_dampning(IFT, IFT_value, IFT_max_diff, IFT_dampning):
 # Water should be called "h2o" and vacuum should be called "vacuum"
 
 
-def calculate_IFT_tot_and_coverage(input_file_name, mix, user, print_statements = True, debug = False, multiprocess = True, delete_files = True):
+def calculate_IFT_tot_and_coverage(input_file_name, mix, user, print_statements = True, debug = False, multiprocess = True, delete_files = True, save_output_file = True):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage inbetween the phases.
     Args: 
@@ -383,7 +383,8 @@ def calculate_IFT_tot_and_coverage(input_file_name, mix, user, print_statements 
         N_cpu = 2
     iterations = 0
     convergence_flag = 0
-    open("output.txt", "w").close()
+    if save_output_file:
+        open("output.txt", "w").close()
     while convergence_flag < convergence_criteria:
         iterations += 1
             
@@ -453,9 +454,9 @@ def calculate_IFT_tot_and_coverage(input_file_name, mix, user, print_statements 
             print("IFT_tot", IFT_tot)
             print("Coverage", coverage)
             print("IFT difference", IFT_tot-IFT_tot_old)
-        
-        with open("output.txt", "a") as file:
-            file.write(", ".join(map(str,coverage))+", {}\n".format(IFT_tot))
+        if save_output_file:
+            with open("output.txt", "a") as file:
+                file.write(", ".join(map(str,coverage))+", {}\n".format(IFT_tot))
     
     if delete_files:
         files = ["flatsurfAB.inp", "flatsurfAB.out", "flatsurfAB.tab", "flatsurfAS.inp", "flatsurfAS.out", "flatsurfAS.tab", "flatsurfBS.inp", "flatsurfBS.out", "flatsurfBS.tab"]
