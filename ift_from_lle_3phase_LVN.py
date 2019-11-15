@@ -302,7 +302,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, mix, user, print_statements 
     unit_converter = 1.66  # Converts to mN/m
     # Coverage
     max_CF = 2
-    coverage_dampning = 0.25
+    coverage_dampning = 0.5
     # IFT
     IFT_max_diff = 20
     IFT_dampning = 0.25
