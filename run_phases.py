@@ -1,17 +1,17 @@
 from __future__ import print_function,division
 import sys
+import os
 import re
 import pandas as pd
 import numpy as np
 from ift_from_lle_3phase_LVN import calculate_IFT_tot_and_coverage, get_comp_and_phases
 
 
-
 def run_IFT(input_file, error_attempts):
     k = 1
     while k <= error_attempts:
         try:
-            coverage, IFT = calculate_IFT_tot_and_coverage(input_file, "mix", "LVN", multiprocess=True)
+            coverage, IFT = calculate_IFT_tot_and_coverage(input_file, "mix", "LVN", save_output_file = False)
             break
         except:
             print("An error occured, trying again. Try number {}/{}.".format(k, error_attempts))
@@ -27,11 +27,17 @@ def main():
     pd.set_option('display.width', 200)
     path_to_COSMOfiles = r"C:\Users\lasse\OneDrive\KU\Kandidat\Projekt\COSMO\COSMOfiles"
     input_file = sys.argv[1]
+    output_path = ""
     error_attempts = 2
     
     # Changes .\input_file.inp -> input_file
     if input_file[:2] == ".\\" and input_file[len(input_file)-4:] == ".inp":
         input_file = input_file[2:len(input_file)-4]
+        
+    # If input file is a path on windows
+    if re.findall("\w:", input_file) != []:
+        input_file = input_file[:len(input_file)-4]
+        output_path = os.path.split(input_file)[0]+"\\"
     
     # Find number of liquid extractions
     with open(input_file+".inp","r") as file:
@@ -134,7 +140,7 @@ def main():
 
     
     # Print output in 3_phase_output.txt
-    with open(str(liq_ex)+"_phase_output.txt", 'w') as file:
+    with open(output_path+str(liq_ex)+"_phase_output.txt", 'w') as file:
         sys.stdout = file
         print(df)
         line = "\n"
