@@ -286,7 +286,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, mix, user, print_statements 
     """
     # Correct to your own path to COSMOtherm
     if user == "LVN":
-        COSMOtherm_path = "C:\Program Files\COSMOlogic\COSMOthermX18\COSMOtherm\BIN-WINDOWS\cosmotherm.exe"  # LVN
+        COSMOtherm_path = "C:\Program Files\COSMOlogic\COSMOthermX19\COSMOtherm\BIN-WINDOWS\cosmotherm.exe"  # LVN
     elif user == "MPA":
         COSMOtherm_path = "/Applications/COSMOlogic/COSMOthermX18/COSMOtherm/BIN-LINUX/cosmotherm"  # MPA
     else:
