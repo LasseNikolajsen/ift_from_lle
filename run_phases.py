@@ -11,7 +11,7 @@ from functions_for_ift import change_input_name, get_comp_and_phases
 def run_IFT(input_file, error_attempts, phase_types):
     for k in range(1,error_attempts+1):
         try:
-            coverage, IFT = calculate_IFT_tot_and_coverage(input_file, phase_types, "LVN", save_output_file = False)
+            coverage, IFT = calculate_IFT_tot_and_coverage(input_file, phase_types, "LVND", save_output_file = False)
             break
         except:
             print("An error occured, trying again. Try number {}/{}.".format(k, error_attempts))
