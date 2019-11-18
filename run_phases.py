@@ -4,19 +4,20 @@ import os
 import re
 import pandas as pd
 import numpy as np
-from ift_from_lle_3phase_LVN import calculate_IFT_tot_and_coverage, get_comp_and_phases
+from ift_from_lle_3phase_LVN import calculate_IFT_tot_and_coverage
+from functions_for_ift import change_input_name, get_comp_and_phases
 
 
-def run_IFT(input_file, error_attempts):
-    k = 1
-    while k <= error_attempts:
+def run_IFT(input_file, error_attempts, phase_types):
+    for k in range(1,error_attempts+1):
         try:
-            coverage, IFT = calculate_IFT_tot_and_coverage(input_file, "mix", "LVN", save_output_file = False)
+            coverage, IFT = calculate_IFT_tot_and_coverage(input_file, phase_types, "LVN", save_output_file = False)
             break
         except:
             print("An error occured, trying again. Try number {}/{}.".format(k, error_attempts))
-            print(sys.stderr)
-            k += 1
+            print(file = sys.stderr)
+            if k == error_attempts:
+                quit()
             continue
     return IFT, coverage
 
@@ -29,15 +30,9 @@ def main():
     input_file = sys.argv[1]
     output_path = ""
     error_attempts = 2
-    
-    # Changes .\input_file.inp -> input_file
-    if input_file[:2] == ".\\" and input_file[len(input_file)-4:] == ".inp":
-        input_file = input_file[2:len(input_file)-4]
+    phase_types = "ll"
         
-    # If input file is a path on windows
-    if re.findall("\w:", input_file) != []:
-        input_file = input_file[:len(input_file)-4]
-        output_path = os.path.split(input_file)[0]+"\\"
+    input_file = change_input_name(input_file)
     
     # Find number of liquid extractions
     with open(input_file+".inp","r") as file:
@@ -55,7 +50,7 @@ def main():
     ift_list = []
     coverage_list = []
     # Initial IFT calculation
-    ift, coverage = run_IFT(input_file, error_attempts)
+    ift, coverage = run_IFT(input_file, error_attempts, phase_types)
     ift_list.append(ift)
     coverage_list.append(coverage)
     
@@ -106,7 +101,7 @@ def main():
                 write.write(last_line)
                 
             # Run the IFT on the reverted concentrations
-            ift, coverage = run_IFT(input_file, error_attempts)
+            ift, coverage = run_IFT(input_file, error_attempts, phase_types)
             ift_list.append(ift)
             coverage_list.append(coverage)
             
