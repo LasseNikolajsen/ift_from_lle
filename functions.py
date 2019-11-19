@@ -18,32 +18,6 @@ def work(cmd):
     return subprocess.call(cmd, shell=False)
     
 
-def run_IFT(input_file, error_attempts, phase_types):
-    """ Run IFT calculation again if a runtime error occurs
-
-    Args:
-        input_file: COSMOtherm input file for the IFT calculation
-        error_attempts: The number of runtime errors the IFT script can encounter before terminating the calculation
-        phase_types: The types of phases in the input file, liquid (L), gas (G) or solid (S)
-
-    Return:
-        IFT: The calculated IFT
-        coverage: The calculated surface coverage
-    """
-    for k in range(1,error_attempts+1):
-        try:
-            coverage, IFT = calculate_IFT_tot_and_coverage(input_file, phase_types, "LVND", save_output_file = False)
-            break
-        except:
-            print("An error occured, trying again. Try number {}/{}.".format(k, error_attempts))
-            print(file = sys.stderr)
-            if k == error_attempts:
-                quit()
-            else:
-                continue
-    return IFT, coverage
-
-
 def change_input_name(name):
     """ Change the input file name from a path or with extension to the name without extension
 

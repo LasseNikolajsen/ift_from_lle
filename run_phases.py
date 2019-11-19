@@ -2,13 +2,45 @@ from __future__ import print_function,division
 import sys
 import os
 import re
+import traceback
 import pandas as pd
 import numpy as np
-from ift_from_lle_3phase_LVN import calculate_IFT_tot_and_coverage
-from functions import change_input_name, get_comp_and_phases, run_IFT
+from ift_from_3phase import calculate_IFT_tot_and_coverage
+from functions import change_input_name, get_comp_and_phases
 
+def run_IFT(input_file, error_attempts, phase_types, initials):
+    """ Run IFT calculation again if a runtime error occurs
+
+    Args:
+        input_file: COSMOtherm input file for the IFT calculation
+        error_attempts: The number of runtime errors the IFT script can encounter before terminating the calculation
+        phase_types: The types of phases in the input file, liquid (L), gas (G) or solid (S)
+		initials: Initials of the person running the script, so it can find the COSMOpath
+        
+    Return:
+        IFT: The calculated IFT
+        coverage: The calculated surface coverage
+    """
+    for k in range(1,error_attempts+1):
+        try:
+            coverage, IFT = calculate_IFT_tot_and_coverage(input_file, phase_types, initials, save_output_file = False)
+            break
+        except:
+            print("An error occured, trying again. Try number {}/{}.".format(k, error_attempts))
+            traceback.print_exc()
+            print(" \n")
+            if k == error_attempts:
+                quit()
+            else:
+                continue
+    return IFT, coverage
 
 def main():
+    initials = "LVND"
+    phase_types = "ll"
+    error_attempts = 2
+    
+    
     pd.options.display.float_format = '{:.10f}'.format
     pd.set_option('display.max_rows', 50)
     pd.set_option('display.max_columns', 50)
@@ -16,9 +48,7 @@ def main():
     path_to_COSMOfiles = r"C:\Users\lasse\OneDrive\KU\Kandidat\Projekt\COSMO\COSMOfiles"
     input_file = sys.argv[1]
     output_path = ""
-    error_attempts = 2
-    phase_types = "ll"
-        
+    
     input_file = change_input_name(input_file)
     
     # Find number of liquid extractions
@@ -37,7 +67,7 @@ def main():
     ift_list = []
     coverage_list = []
     # Initial IFT calculation
-    ift, coverage = run_IFT(input_file, error_attempts, phase_types)
+    ift, coverage = run_IFT(input_file, error_attempts, phase_types, initials)
     ift_list.append(ift)
     coverage_list.append(coverage)
     
@@ -51,7 +81,7 @@ def main():
             for j in range(liq_ex):
                 conc[j].append(float(tab_lines[i].split()[j+2]))
 
-	# If liq_ex = 3, run the second interface
+	# If liq_ex >= 3, run the next interfaces
     if liq_ex >= 3:
         phase_counter = liq_ex
         save_last_line = 1
@@ -88,7 +118,7 @@ def main():
                 write.write(last_line)
                 
             # Run the IFT on the reverted concentrations
-            ift, coverage = run_IFT(input_file, error_attempts, phase_types)
+            ift, coverage = run_IFT(input_file, error_attempts, phase_types, initials)
             ift_list.append(ift)
             coverage_list.append(coverage)
             
@@ -121,7 +151,7 @@ def main():
     df = pd.DataFrame(matrix, columns=header, index=comp_list)
 
     
-    # Print output in 3_phase_output.txt
+    # Print output in n_phase_output.txt
     with open(output_path+str(liq_ex)+"_phase_output.txt", 'w') as file:
         sys.stdout = file
         print(df)
