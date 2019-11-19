@@ -26,7 +26,9 @@ def change_input_name(name):
         
     Return:
         name: The input file name without extension as a string
+        path: The path to the input file if it has one
     """
+    path = ""
     # Changes .\input_file.inp -> input_file
     if name[:2] == ".\\" and name[len(name)-4:] == ".inp":
         name = name[2:len(name)-4]
@@ -34,7 +36,8 @@ def change_input_name(name):
     # If input file is a path on windows
     if re.findall("\w:", name) != [] and name[len(name)-4:] == ".inp":
         name = name[:len(name)-4]
-    return name
+        path = os.path.split(name)[0]+"\\"
+    return name, path
     
 def check_units(input_file_name):
     """ Check if unit=si is present in the .inp file
@@ -78,7 +81,7 @@ def check_parameterization(input_file_name):
             quit()
     return scale_water, parameter[index]
 
-def check_phase_types(types):
+def check_phase_types(types, N_phases):
     """ Check the input phase types
     
     Args:
@@ -89,10 +92,10 @@ def check_phase_types(types):
     """
     
     # Check the input
-    if len(types) != 2:
-        print("Warning: Input types did not match the correct length of 2.")
+    if len(types) != N_phases:
+        print("Warning: Phase types did not match the correct length of {}.".format(N_phases))
         quit()
-    if len(re.findall("[LlGgSs]", types)) != 2:
+    if len(re.findall("[LlGgSs]", types)) != N_phases:
         print("Warning: Input types did not match phase types of liquid (L), gas (G) or solid (S).")
         quit()
     
@@ -138,7 +141,7 @@ def get_N_compounds_and_T(input_file_name):
     return N_compounds, T
 
     
-def get_comp_and_phases(input_file_name, N_compounds):
+def get_comp_and_phases_for_LL(input_file_name, N_compounds):
     """ Extract data from the .tab file
     
     Args:
@@ -147,8 +150,8 @@ def get_comp_and_phases(input_file_name, N_compounds):
         
     Return:
         compound_list: Compound names as a list
-        phase1: Phase 1 as a list of floats
-        phase2: Phase 2 as a list of floats
+        phase1: Phase 1 as a np.array of floats
+        phase2: Phase 2 as a np.array of floats
     """
     compound_list = []
     phase1 = []
@@ -169,7 +172,48 @@ def get_comp_and_phases(input_file_name, N_compounds):
     return compound_list, phase1, phase2
     
     
-def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2, T, IFT, IFT_write_length):
+def get_comp_and_phases(input_file_name, N_compounds):
+    """ Extract data from the .inp file
+    
+    Args:
+        input_file_name: The input file name without extension as a string
+        N_compounds: The number of compounds in the system as an integer
+        
+    Return:
+        compound_list: Compound names as a list
+        phase1: Phase 1 as a np.array of floats
+        phase2: Phase 2 as a np.array of floats
+    """
+    compound_list = []
+    phase1 = []
+    phase2 = []
+    
+    with open(input_file_name+".inp","r") as file:
+        lines = file.read()
+        compound_object = re.findall(r"[f]\s*=\s*\S*", lines)
+        phase_object = re.findall(r"[^w]\d\ *=\ *\{[\d \. \ * e \-]*", lines)
+        
+        for i in range(N_compounds):
+            # print(i)
+            compound_list.append(compound_object[i].split()[-1].split("_")[0])
+            if phase_object[i][1] == "1":
+                for j in phase_object[i].split():
+                    if re.findall(r"[^w]\d\ *=\ *\{", j) != []:
+                        phase1.append(float(j.split("{")[1]))
+                    else:
+                        phase1.append(float(j))
+            if phase_object[i][1] == "2":
+                for j in phase_object[i].split():
+                    if re.findall(r"[^w]\d\ *=\ *\{", j) != []:
+                        phase2.append(float(j.split("{")[1]))
+                    else:
+                        phase2.append(float(j))
+        phase1 = np.array(phase1)
+        phase2 = np.array(phase2)
+    return compound_list, phase1, phase2
+    
+    
+def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2, T, IFT, IFT_write_length, phase_types):
     """ Create new .inp files for flatsurf calculations
     
     Args:
@@ -179,18 +223,21 @@ def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2,
         phase2: Second phase as a list
         T: Temperature as a float
         IFT: IFT as a float
+        phase_types: Type of phases (Liquid L, Gas, G, Solid S) as a string
     
     Return:
         None
     """
+    max_depth = ""
+    
     with open(input_file_name+".inp", "r") as file:  # Read the inital input file
         lines = file.readlines()
         # Create output_input_file_name.inp file and write all lines except the last from initial file and write new last line
         with open(output_input_file_name+".inp", "w") as output:    
             output.writelines(lines[:-1])  # All lines except the last
             # Last line 
-            (output.write("tk={0} FLATSURF xf1={{{1}}} xf2={{{2}}} IGNORE_CHARGE IFT={3:.{4}f}\n".
-            format(T, "  ".join(map(str,phase1)), "  ".join(map(str,phase2)), IFT, IFT_write_length)))
+            (output.write("tk={0} FLATSURF xf1={{{1}}} xf2={{{2}}} IGNORE_CHARGE IFT={3:.{4}f} {5}\n".
+            format(T, "  ".join(map(str,phase1)), "  ".join(map(str,phase2)), IFT, IFT_write_length, max_depth)))
     return
     
 

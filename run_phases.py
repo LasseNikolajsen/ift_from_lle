@@ -6,7 +6,7 @@ import traceback
 import pandas as pd
 import numpy as np
 from ift_from_3phase import calculate_IFT_tot_and_coverage
-from functions import change_input_name, get_comp_and_phases
+from functions import change_input_name, get_comp_and_phases, check_phase_types
 
 def run_IFT(input_file, error_attempts, phase_types, initials):
     """ Run IFT calculation again if a runtime error occurs
@@ -37,7 +37,7 @@ def run_IFT(input_file, error_attempts, phase_types, initials):
 
 def main():
     initials = "LVND"
-    phase_types = "ll"
+    phase_types = "LL"
     error_attempts = 2
     
     
@@ -47,9 +47,9 @@ def main():
     pd.set_option('display.width', 200)
     path_to_COSMOfiles = r"C:\Users\lasse\OneDrive\KU\Kandidat\Projekt\COSMO\COSMOfiles"
     input_file = sys.argv[1]
-    output_path = ""
     
-    input_file = change_input_name(input_file)
+    input_file, output_path = change_input_name(input_file)
+    
     
     # Find number of liquid extractions
     with open(input_file+".inp","r") as file:
@@ -60,7 +60,11 @@ def main():
         # Find number of liquid extractions
         obj_inp = re.findall(r"liq_ex=\d", text)
         liq_ex = int(obj_inp[0][-1])
-        
+
+    phase_types = check_phase_types(phase_types, liq_ex)
+    # if liq_ex != len(phase_types):
+        # print("Warning: Need to define the type of each phase in the calculation.")
+        # quit()
     
 	# Initialize calculated concentration lists
     conc = [[] for _ in range(liq_ex)]
@@ -72,14 +76,28 @@ def main():
     coverage_list.append(coverage)
     
     # Make the header for printout
-    header = ["phase_1", "surf_1_2", "phase_2"]
+    header = ["phase_1 ({})".format(phase_types[0]), "surf_1_2", "phase_2 ({})".format(phase_types[1])]
     
-	# Read concentrations from liquid extraction
-    with open(input_file+".tab", "r") as file:
-        tab_lines = file.readlines()
-        for i in range(-N_compounds, 0, 1):
-            for j in range(liq_ex):
-                conc[j].append(float(tab_lines[i].split()[j+2]))
+    if phase_types == "LL":  # Read concentrations from liquid extraction in .tab file
+        with open(input_file+".tab", "r") as file:
+            tab_lines = file.readlines()
+            for i in range(-N_compounds, 0, 1):
+                for j in range(liq_ex):
+                    conc[j].append(float(tab_lines[i].split()[j+2]))
+    else:  # Read concentrations from .inp file
+        phase = []
+        with open(input_file+".inp","r") as file:
+            lines = file.read()
+            phase_object = re.findall(r"[^w]\d\ *=\ *\{[\d \. \ * e \-]*", lines)
+            
+            for i in range(len(phase_object)):
+                phase = []
+                for j in phase_object[i].split():
+                    if re.findall(r"[^w]\d\ *=\ *\{", j) != []:
+                        phase.append(float(j.split("{")[1]))
+                    else:
+                        phase.append(float(j))
+                conc[i] = phase
 
 	# If liq_ex >= 3, run the next interfaces
     if liq_ex >= 3:
@@ -87,7 +105,7 @@ def main():
         save_last_line = 1
         # Revert the last line
         for k in range(1, liq_ex-1):  # The first 2 phases is done in the initial calculation 
-            header.extend(["surf_"+str(k+1)+"_"+str(k+2), "phase_"+str(k+2)])
+            header.extend(["surf_"+str(k+1)+"_"+str(k+2), "phase_"+str(k+2)+str(phase_types[k+1])])
             with open(input_file+".inp", "r") as read:
                 read_lines = read.readlines()
                 if save_last_line == 1:

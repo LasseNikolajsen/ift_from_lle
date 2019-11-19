@@ -8,12 +8,12 @@ from functions import *
 from multiprocessing import Pool, cpu_count
 
 
-# Run by: python "scriptname" "input_file_name"(without extensions) mix "user initials"(in caps)
+# Run by: python "scriptname" "input_file_name"(without extensions) phase type (liquid (L), gas (G), solid (S)) "user initials"(in caps)
 # Water should be called "h2o" and vacuum should be called "vacuum"
 
 
 def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
-                                    multiprocess = True, delete_files = True, save_output_file = False):
+                                    multiprocess = True, delete_files = True, save_output_file = True):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage inbetween the phases.
     Args: 
@@ -25,6 +25,8 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         print_statements: Print information from each iteration, boolean, optional, default = True
         debug: Print additional information from each COSMOtherm calculation, boolean, optional, default = False
         multiprocess: Run COSMOtherm simultaniously in the while loop, boolean, optional, default = True
+        delete_files: Delete the intermediate files created during the calculation, default = True
+        save_output_file: Save the direct output of the calculation, default = True
         
     Return:
         coverage: The surface coverage between the two input phases as a numpy array
@@ -63,19 +65,16 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     float_precision = 10
 
     # Change input name
-    input_file_name = change_input_name(input_file_name)
+    input_file_name, output_path = change_input_name(input_file_name)
 
     # Check unit=si in input file
     check_units(input_file_name)
     
     # Check phase types
-    check_phase_types(phase_types)
+    phase_types = check_phase_types(phase_types[:2], 2)
     
     # Check if this file water parameterization matches the input file
     scale_water, parameter = check_parameterization(input_file_name)
-
-    # Run COSMOtherm
-    subprocess.call([COSMOtherm_path, input_file_name+".inp"])
 
     # Read Number of compounds and Temperature from initial .inp file   
     N_compounds, T = get_N_compounds_and_T(input_file_name)
@@ -83,25 +82,30 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     if debug:    
         print("N_compounds:", N_compounds, "Temperature:", T, "[K]")
 
-    # Get the composition of the two phases from the .tab file      
-    compound_list, phase1, phase2 = get_comp_and_phases(input_file_name, N_compounds)
+    # Get the composition of the two phases from the .tab file for LL after LLE or from the .inp file for everything els    
+    if phase_types == "LL":
+        subprocess.call([COSMOtherm_path, input_file_name+".inp"])
+        compound_list, phase1, phase2 = get_comp_and_phases_for_LL(input_file_name, N_compounds)
+    else:
+        compound_list, phase1, phase2 = get_comp_and_phases(input_file_name, N_compounds)
+        
     phase1 = phase1/np.sum(phase1)
     phase2 = phase2/np.sum(phase2)
-    # If there is a 0 in the coverage, convert it to 10^-16
+    # If there is a 0 in phase1, convert it to 10^-16
     if 0 in phase1:
         for i in np.where(phase1==0)[0]:
             phase1[i] = 1e-16
-    # If there is a 0 in the coverage, convert it to 10^-16
+    # If there is a 0 in phase2, convert it to 10^-16
     if 0 in phase2:
         for i in np.where(phase2==0)[0]:
             phase2[i] = 1e-16
     
     
     if print_statements:
-        print("Parameterization: {3} \nCompounds: {0} \nphase1: {1} \nphase2: {2}".format(compound_list, phase1, phase2, parameter))    
+        print("Parameterization: {0} \nCompounds: {1} \nphase1: {2} {3} \nphase2: {4} {5}".format(parameter, compound_list, phase1, phase_types[0], phase2, phase_types[1]))    
 
     # Create flatsurfAB file
-    write_flatsurf_file(input_file_name, "flatsurfAB", phase1, phase2, T, start_ift, IFT_write_length)
+    write_flatsurf_file(input_file_name, "flatsurfAB", phase1, phase2, T, start_ift, IFT_write_length, phase_types)
 
     # Run COSMOtherm
     subprocess.call([COSMOtherm_path, "flatsurfAB.inp"])    
@@ -138,13 +142,13 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     iterations = 0
     convergence_flag = 0
     if save_output_file:
-        open("output.txt", "w").close()
+        open(output_path + "output.txt", "w").close()
     while convergence_flag < convergence_criteria:
         iterations += 1
             
         # Create flatsurf files
-        write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length)
-        write_flatsurf_file(input_file_name, "flatsurfBS", phase2, coverage, T, IFT_B_value, IFT_write_length)
+        write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types)
+        write_flatsurf_file(input_file_name, "flatsurfBS", phase2, coverage, T, IFT_B_value, IFT_write_length, phase_types)
         
         # Run both COSMOtherm instances simultaniously 
         if multiprocess:
@@ -209,7 +213,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             print("Coverage", coverage)
             print("IFT difference", IFT_tot-IFT_tot_old)
         if save_output_file:
-            with open("output.txt", "a") as file:
+            with open(output_path + "output.txt", "a") as file:
                 file.write(", ".join(map(str,coverage))+", {}\n".format(IFT_tot))
     
     if delete_files:
