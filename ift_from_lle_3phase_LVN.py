@@ -4,7 +4,7 @@ import sys
 import os
 import numpy as np
 import re
-from functions_for_ift import *
+from functions import *
 from multiprocessing import Pool, cpu_count
 
 

@@ -4,6 +4,8 @@ import os
 import numpy as np
 import re
 
+# This document includes all the functions called in the IFT calculation script and the run_phases support script
+
 def work(cmd):
     """ Run the process for multiprocessing
     

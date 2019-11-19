@@ -5,21 +5,8 @@ import re
 import pandas as pd
 import numpy as np
 from ift_from_lle_3phase_LVN import calculate_IFT_tot_and_coverage
-from functions_for_ift import change_input_name, get_comp_and_phases
+from functions import change_input_name, get_comp_and_phases, run_IFT
 
-
-def run_IFT(input_file, error_attempts, phase_types):
-    for k in range(1,error_attempts+1):
-        try:
-            coverage, IFT = calculate_IFT_tot_and_coverage(input_file, phase_types, "LVND", save_output_file = False)
-            break
-        except:
-            print("An error occured, trying again. Try number {}/{}.".format(k, error_attempts))
-            print(file = sys.stderr)
-            if k == error_attempts:
-                quit()
-            continue
-    return IFT, coverage
 
 def main():
     pd.options.display.float_format = '{:.10f}'.format
