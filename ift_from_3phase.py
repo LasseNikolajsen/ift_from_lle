@@ -8,7 +8,7 @@ from functions import *
 from multiprocessing import Pool, cpu_count
 
 
-# Run by: python "scriptname" "input_file_name"(without extensions) phase type (liquid (L), gas (G), solid (S)) "user initials"(in caps)
+# Run by: python "script name" "input_file_name"(without extensions) phase type (liquid (L), gas (G), solid (S)) "user initials"(in caps)
 # Water should be called "h2o" and vacuum should be called "vacuum"
 
 
@@ -61,8 +61,8 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     convergence_threshold = 1e-3
 
     # Output precision
-    np.set_printoptions(precision = 6, suppress = True)
-    float_precision = 10
+    np.set_printoptions(formatter={'float': '{: 0.4f}'.format}, suppress = True)
+    float_precision = 6
 
     # Change input name
     input_file_name, output_path = change_input_name(input_file_name)
@@ -102,7 +102,11 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     
     
     if print_statements:
-        print("Parameterization: {0} \nCompounds: {1} \nphase1: {2} {3} \nphase2: {4} {5}".format(parameter, compound_list, phase1, phase_types[0], phase2, phase_types[1]))    
+        print_compound_list = "[ {}".format(compound_list[0])
+        for i in compound_list[1:]:
+            print_compound_list += "  " + i
+        print_compound_list += "]"
+        print("Parameterization: {0} \nCompounds: {1} \nPhase 1:   {2} {3} \nPhase 2:   {4} {5}".format(parameter, print_compound_list, phase1, phase_types[0], phase2, phase_types[1]))    
 
     # Create flatsurfAB file
     write_flatsurf_file(input_file_name, "flatsurfAB", phase1, phase2, T, start_ift, IFT_write_length, phase_types)
@@ -222,8 +226,8 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         for i in range(len(files)):
             if os.path.exists(files[i]):
                 os.remove(files[i])
-
-    print("coverage:", coverage, "IFT_tot:", IFT_tot)        
+    np.set_printoptions(suppress = True)
+    print("The script has converged!\nPhase 1:  {} \nCoverage: {} \nPhase 2:  {} \nTotal IFT: {}".format(phase1, coverage, phase2, IFT_tot))
     return coverage, IFT_tot
 
 

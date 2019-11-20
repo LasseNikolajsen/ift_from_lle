@@ -192,22 +192,21 @@ def get_comp_and_phases(input_file_name, N_compounds):
         lines = file.read()
         compound_object = re.findall(r"[f]\s*=\s*\S*", lines)
         phase_object = re.findall(r"[^w]\d\ *=\ *\{[\d \. \ * e \-]*", lines)
-        
         for i in range(N_compounds):
-            # print(i)
             compound_list.append(compound_object[i].split()[-1].split("_")[0])
-            if phase_object[i][1] == "1":
-                for j in phase_object[i].split():
-                    if re.findall(r"[^w]\d\ *=\ *\{", j) != []:
-                        phase1.append(float(j.split("{")[1]))
+        for j in phase_object:
+            if j[1] == "1":
+                for k in j.split():
+                    if re.findall(r"[^w]\d\ *=\ *\{", k) != []:
+                        phase1.append(float(k.split("{")[1]))
                     else:
-                        phase1.append(float(j))
-            if phase_object[i][1] == "2":
-                for j in phase_object[i].split():
-                    if re.findall(r"[^w]\d\ *=\ *\{", j) != []:
-                        phase2.append(float(j.split("{")[1]))
+                        phase1.append(float(k))
+            if j[1] == "2":
+                for k in j.split():
+                    if re.findall(r"[^w]\d\ *=\ *\{", k) != []:
+                        phase2.append(float(k.split("{")[1]))
                     else:
-                        phase2.append(float(j))
+                        phase2.append(float(k))
         phase1 = np.array(phase1)
         phase2 = np.array(phase2)
     return compound_list, phase1, phase2
@@ -324,7 +323,7 @@ def calculate_coverage(phase, Gtot, R, T):
     
     
 def calculate_IFT(phase, Gtot_phase_AS, Gtot_phase_SB, area_phase_AS, area_phase_SB, coverage, R, T, unit_converter, phase_types):
-    """ Calculate IFT between two phases
+    """ Calculate IFT between two phases for either Liquid (L) - Surface Coverage (C)c Gas (G) - Surface Coverage (C) or Solid (S) - Surface Coverage (C)
     
     Args:
         phase: Phase as a list
@@ -342,7 +341,11 @@ def calculate_IFT(phase, Gtot_phase_AS, Gtot_phase_SB, area_phase_AS, area_phase
         coverage_part = coverage*(Gtot_phase_AS-R*T*np.log(phase)+R*T*np.log(coverage))
         phase_part = phase*Gtot_phase_AS
         IFT = np.sum((coverage_part + phase_part)/(2*area_phase_AS)*unit_converter)
-    if phase_types == "SC" or phase_types == "CS":
+    elif phase_types == "GC" or phase_types == "CG":
+        coverage_part = coverage*(Gtot_phase_AS-R*T*np.log(phase)+R*T*np.log(coverage))
+        phase_part = phase*Gtot_phase_AS
+        IFT = np.sum((coverage_part + phase_part)/(2*area_phase_AS)*unit_converter)
+    elif phase_types == "SC" or phase_types == "CS":
         phase_part = phase*Gtot_phase_SB
         IFT = np.sum(phase_part/(2*area_phase_AS)*unit_converter)
     return IFT
