@@ -15,18 +15,18 @@ from multiprocessing import Pool, cpu_count
 def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
                                     multiprocess = True, delete_files = True, save_output_file = True):
     """ Calculate the total interfacial tension of the two input phases and 
-        the surface coverage inbetween the phases.
+        the surface coverage between the phases.
     Args: 
         input_file_name: The name of the input file that the code should run either without extension, 
                          with extension or a path, as a string 
         phase_types: Input phase types of IFT calculation one char for each phase
                      as a string (L for liquid, G for gas, S for solid)
         user: The user initials in caps as a string
-        print_statements: Print information from each iteration, boolean, optional, default = True
-        debug: Print additional information from each COSMOtherm calculation, boolean, optional, default = False
-        multiprocess: Run COSMOtherm simultaniously in the while loop, boolean, optional, default = True
-        delete_files: Delete the intermediate files created during the calculation, default = True
-        save_output_file: Save the direct output of the calculation, default = True
+        print_statements: Print information from each iteration, boolean, default = True
+        debug: Print additional information from each COSMOtherm calculation, boolean, default = False
+        multiprocess: Run COSMOtherm simultaneously in the while loop, boolean, default = True
+        delete_files: Delete the intermediate files created during the calculation, boolean, default = True
+        save_output_file: Save the direct output of the calculation, boolean, default = True
         
     Return:
         coverage: The surface coverage between the two input phases as a numpy array
@@ -143,14 +143,15 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     convergence_flag = 0
     if save_output_file:
         open(output_path + "output.txt", "w").close()
+    phase_types = phase_types[0]+"C"+phase_types[1]  # Add coverage C as the middel phase
     while convergence_flag < convergence_criteria:
         iterations += 1
             
         # Create flatsurf files
-        write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types)
-        write_flatsurf_file(input_file_name, "flatsurfBS", phase2, coverage, T, IFT_B_value, IFT_write_length, phase_types)
-        
-        # Run both COSMOtherm instances simultaniously 
+        write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types[:2])
+        write_flatsurf_file(input_file_name, "flatsurfBS", phase2, coverage, T, IFT_B_value, IFT_write_length, phase_types[1:])
+
+        # Run both COSMOtherm instances simultaneously 
         if multiprocess:
             pool = Pool(processes=N_cpu)
             pool.map(work, [[COSMOtherm_path, os.path.abspath("flatsurfAS.inp")], 
@@ -183,10 +184,10 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         coverage /= np.sum(coverage)
 
         # Calculate IFT between phase and surface, using equation 3 for each direction
-        IFT_A = calculate_IFT(phase1, GtotAS, AreaAS, coverage, R, T, unit_converter)
-        IFT_B = calculate_IFT(phase2, GtotBS, AreaBS, coverage, R, T, unit_converter)
+        IFT_A = calculate_IFT(phase1, GtotAS, GtotSA, AreaAS, AreaSA, coverage, R, T, unit_converter, phase_types[:2])
+        IFT_B = calculate_IFT(phase2, GtotBS, GtotSB, AreaBS, AreaSB, coverage, R, T, unit_converter, phase_types[1:])
         
-        # Dampning IFT
+        # Damping IFT
         IFT_A_value = calculate_IFT_dampning(IFT_A, IFT_A_value, IFT_max_diff, IFT_dampning)
         IFT_B_value = calculate_IFT_dampning(IFT_B, IFT_B_value, IFT_max_diff, IFT_dampning)
         

@@ -223,12 +223,14 @@ def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2,
         phase2: Second phase as a list
         T: Temperature as a float
         IFT: IFT as a float
-        phase_types: Type of phases (Liquid L, Gas, G, Solid S) as a string
+        phase_types: Type of phases (Liquid L, Gas, G, Solid S, Coverge C) as a string
     
     Return:
         None
     """
     max_depth = ""
+    if phase_types == "SC" or phase_types == "CS":
+        max_depth = "maxdepth=2.0"
     
     with open(input_file_name+".inp", "r") as file:  # Read the inital input file
         lines = file.readlines()
@@ -236,7 +238,7 @@ def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2,
         with open(output_input_file_name+".inp", "w") as output:    
             output.writelines(lines[:-1])  # All lines except the last
             # Last line 
-            (output.write("tk={0} FLATSURF xf1={{{1}}} xf2={{{2}}} IGNORE_CHARGE IFT={3:.{4}f} {5}\n".
+            (output.write("tk={0} FLATSURF xf1={{{1}}} xf2={{{2}}} IGNORE_CHARGE {5} IFT={3:.{4}f} \n".
             format(T, "  ".join(map(str,phase1)), "  ".join(map(str,phase2)), IFT, IFT_write_length, max_depth)))
     return
     
@@ -321,7 +323,7 @@ def calculate_coverage(phase, Gtot, R, T):
     return coverage 
     
     
-def calculate_IFT(phase, Gtot_phase, area_phase, coverage, R, T, unit_converter):
+def calculate_IFT(phase, Gtot_phase_AS, Gtot_phase_SB, area_phase_AS, area_phase_SB, coverage, R, T, unit_converter, phase_types):
     """ Calculate IFT between two phases
     
     Args:
@@ -331,13 +333,18 @@ def calculate_IFT(phase, Gtot_phase, area_phase, coverage, R, T, unit_converter)
         R: The gas constant in kj/mol/K as a float
         T: The temperature in Kelvin as a float
         unit_converter: Converts the output to mN/m as a float
+        phase_types: Type of phases (Liquid L, Gas, G, Solid S, Coverge C) as a string
         
     Return:
         IFT: The sum of all interfacial tensions between phase and surface
     """
-    coverage_part = coverage*(Gtot_phase-R*T*np.log(phase)+R*T*np.log(coverage))
-    phase_part = phase*Gtot_phase
-    IFT = np.sum((coverage_part + phase_part)/(2*area_phase)*unit_converter)
+    if phase_types == "LC" or phase_types == "CL":
+        coverage_part = coverage*(Gtot_phase_AS-R*T*np.log(phase)+R*T*np.log(coverage))
+        phase_part = phase*Gtot_phase_AS
+        IFT = np.sum((coverage_part + phase_part)/(2*area_phase_AS)*unit_converter)
+    if phase_types == "SC" or phase_types == "CS":
+        phase_part = phase*Gtot_phase_SB
+        IFT = np.sum(phase_part/(2*area_phase_AS)*unit_converter)
     return IFT
 
     
