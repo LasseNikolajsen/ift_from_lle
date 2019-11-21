@@ -37,7 +37,7 @@ def run_IFT(input_file, error_attempts, phase_types, initials):
 
 def main():
     initials = "LVND"
-    phase_types = "LLL"
+    phase_types = "LS"
     error_attempts = 2
     
     
