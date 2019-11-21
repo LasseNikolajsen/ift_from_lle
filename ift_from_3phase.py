@@ -33,15 +33,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         IFT_tot: The total interfacial tension of the system as a float
     """
     # Correct to your own path to COSMOtherm
-    if user == "LVN":
-        COSMOtherm_path = "C:\Program Files\COSMOlogic\COSMOthermX19\COSMOtherm\BIN-WINDOWS\cosmotherm.exe"  # LVN
-    elif user == "LVND":
-        COSMOtherm_path = r"C:\Users\lvani\AppData\Local\COSMOlogic\COSMOthermX19\COSMOtherm\BIN-WINDOWS\cosmotherm.exe"  # LVN desktop
-    elif user == "MPA":
-        COSMOtherm_path = "/Applications/COSMOlogic/COSMOthermX18/COSMOtherm/BIN-LINUX/cosmotherm"  # MPA
-    else:
-        print("User not recognized, add new user and COSMOtherm path in the code.")
-        quit()
+    COSMOtherm_path = get_user_and_path(user)
 
     # Initial values
 

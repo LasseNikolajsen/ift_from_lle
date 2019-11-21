@@ -6,6 +6,35 @@ import re
 
 # This document includes all the functions called in the IFT calculation script and the run_phases support script
 
+def get_user_and_path(user_input):
+    """ Get user name and COSMOtherm path from Users.txt file
+    
+    Args:
+        user_input: User input as a string
+    
+    Return:
+        user: User nickname as a string
+        COSMOtherm_path: Path to the program as a real string
+    """
+    user_list = []
+    path_list = []
+    
+    with open("Users.txt", "r") as file:
+        text = file.read()
+        user_object = re.findall("[Nn]ame:\ *\w*", text)
+        path_obejct = re.findall("[Pp]ath:\ *[\S\ ]*", text)
+        for (u, p) in zip(user_object, path_obejct):
+            full_path = ""
+            user_list.append(u.split()[1])
+            p_split = p.split()
+            for i in p_split[1:]:
+                full_path += i
+            path_list.append(full_path)
+    index = user_list.index(user_input)
+    COSMOtherm_path = path_list[index]
+    return COSMOtherm_path
+
+
 def work(cmd):
     """ Run the process for multiprocessing
     
@@ -341,15 +370,15 @@ def calculate_IFT(bulk_phase, Gtot_phase_bulk_surface, Gtot_phase_surface_bulk, 
         IFT: The sum of all interfacial tensions between phase and surface as a float
     """
     if phase_types == "LC" or phase_types == "CL":
-        coverage_part = coverage*(Gtot_phase_bulk_surface-R*T*np.log(phase)+R*T*np.log(coverage))
-        phase_part = phase*Gtot_phase_bulk_surface
+        coverage_part = coverage*(Gtot_phase_bulk_surface-R*T*np.log(bulk_phase)+R*T*np.log(coverage))
+        phase_part = bulk_phase*Gtot_phase_bulk_surface
         IFT = np.sum((coverage_part + phase_part)/(2*area_phase_bulk_surface)*unit_converter)
     elif phase_types == "GC" or phase_types == "CG":
-        coverage_part = coverage*(Gtot_phase_bulk_surface-R*T*np.log(phase)+R*T*np.log(coverage))
-        phase_part = phase*Gtot_phase_bulk_surface
+        coverage_part = coverage*(Gtot_phase_bulk_surface-R*T*np.log(bulk_phase)+R*T*np.log(coverage))
+        phase_part = bulk_phase*Gtot_phase_bulk_surface
         IFT = np.sum((coverage_part + phase_part)/(2*area_phase_bulk_surface)*unit_converter)
     elif phase_types == "SC" or phase_types == "CS":
-        phase_part = phase*Gtot_phase_surface_bulk
+        phase_part = bulk_phase*Gtot_phase_surface_bulk
         IFT = np.sum(phase_part/(2*area_phase_surface_bulk)*unit_converter)
     return IFT
 

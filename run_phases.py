@@ -23,7 +23,7 @@ def run_IFT(input_file, error_attempts, phase_types, initials):
     """
     for k in range(1,error_attempts+1):
         try:
-            coverage, IFT = calculate_IFT_tot_and_coverage(input_file, phase_types, initials, save_output_file = False)
+            coverage, IFT = calculate_IFT_tot_and_coverage(input_file, phase_types, initials, save_output_file = False, multiprocess = False)
             break
         except:
             print("An error occurred, trying again. Try number {}/{}.".format(k, error_attempts))
@@ -37,7 +37,7 @@ def run_IFT(input_file, error_attempts, phase_types, initials):
 
 def main():
     initials = "LVND"
-    phase_types = "LS"
+    phase_types = "LL"
     error_attempts = 2
     
     
