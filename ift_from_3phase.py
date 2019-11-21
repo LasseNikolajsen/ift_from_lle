@@ -142,7 +142,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     phase_types = phase_types[0]+"C"+phase_types[1]  # Add coverage C as the middel phase
     while convergence_flag < convergence_criteria:
         iterations += 1
-            
+        
         # Create flatsurf files
         write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types[:2])
         write_flatsurf_file(input_file_name, "flatsurfBS", phase2, coverage, T, IFT_B_value, IFT_write_length, phase_types[1:])
