@@ -63,7 +63,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     check_units(input_file_name)
     
     # Check phase types
-    phase_types = check_phase_types(phase_types[:2], 2)
+    phase_types = check_phase_types(phase_types, 2)
     
     # Check if this file water parameterization matches the input file
     scale_water, parameter = check_parameterization(input_file_name)

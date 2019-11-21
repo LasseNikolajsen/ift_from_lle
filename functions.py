@@ -6,11 +6,11 @@ import re
 
 # This document includes all the functions called in the IFT calculation script and the run_phases support script
 
-def get_user_and_path(user_input):
-    """ Get user name and COSMOtherm path from Users.txt file
+def get_user_and_path(user_name):
+    """ Get COSMOtherm path from Users.txt file or add a new user based on user input
     
     Args:
-        user_input: User input as a string
+        user_name: User name as a string
     
     Return:
         user: User nickname as a string
@@ -30,8 +30,33 @@ def get_user_and_path(user_input):
             for i in p_split[1:]:
                 full_path += i
             path_list.append(full_path)
-    index = user_list.index(user_input)
-    COSMOtherm_path = path_list[index]
+            
+    try:   # Try and find the user name in the Users.txt file
+        index = user_list.index(user_name)
+        COSMOtherm_path = path_list[index]
+    except:  # If not found prompt the user to input a new name or terminate the script
+        print("User name not recognized")
+        print("Do you want to add a new name and COSMOtherm path to the Users.txt file? [Yes(y)/No(n)]")
+        agreement = input()
+
+        if agreement == "y":
+            name = input("Name:")
+            path = input("COSMOtherm path:")
+            print("Name: ", name)
+            print("Path:", path)
+            with open("Users.txt", "a") as file:
+                if path[-14:] != "cosmotherm.exe":
+                    path += "cosmotherm.exe"
+                file.write("\n \n")
+                file.write("Name: "+name)
+                file.write("\n")
+                file.write("Path: "+path)
+            print("Were added to your local version of Users.txt")
+            COSMOtherm_path = path
+        else:
+            print("The script will terminate now")
+            quit()
+
     return COSMOtherm_path
 
 
@@ -119,14 +144,24 @@ def check_phase_types(types, N_phases):
     Return:
         types: As a formated string
     """
-    
     # Check the input
     if len(types) != N_phases:
         print("Warning: Phase types did not match the correct length of {}.".format(N_phases))
-        quit()
+        print("Do you want to change the phase types for this calculation? [Yes(y)/No(n)]")
+        agreement = input()
+        if agreement == "y" or agreement == "Y":
+            types = input("Write new types:")
+        else:
+            quit()
+            
     if len(re.findall("[LlGgSs]", types)) != N_phases:
         print("Warning: Input types did not match phase types of liquid (L), gas (G) or solid (S).")
-        quit()
+        print("Do you want to change the phase types for this calculation? [Yes(y)/No(n)]")
+        agreement = input()
+        if agreement == "y" or agreement == "Y":
+            types = input("Write new types:")
+        else:
+            quit()
     
     # Format the input for future implementation
     types_formated = ""
