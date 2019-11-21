@@ -145,24 +145,22 @@ def check_phase_types(types, N_phases):
         types: As a formated string
     """
     # Check the input
-    if len(types) != N_phases:
-        print("Warning: Phase types did not match the correct length of {}.".format(N_phases))
-        print("Do you want to change the phase types for this calculation? [Yes(y)/No(n)]")
-        agreement = input()
-        if agreement == "y" or agreement == "Y":
-            types = input("Write new types:")
+    correct_phase = (len(types) != N_phases or len(re.findall("[LlGgSs]", types)) != N_phases)
+    while(correct_phase):
+        if(len(types) != N_phases):
+            print("Warning: Phase types did not match the correct length of {}.".format(N_phases))
+        elif(len(re.findall("[LlGgSs]", types)) != N_phases):
+            print("Warning: Input types did not match phase types of liquid (L), gas (G) or solid (S).")
         else:
+            print("Unknown error when checking the phase types")
             quit()
-            
-    if len(re.findall("[LlGgSs]", types)) != N_phases:
-        print("Warning: Input types did not match phase types of liquid (L), gas (G) or solid (S).")
-        print("Do you want to change the phase types for this calculation? [Yes(y)/No(n)]")
-        agreement = input()
-        if agreement == "y" or agreement == "Y":
-            types = input("Write new types:")
+        print("Do you want to change the phase types for this calculation?")
+        types = input("Write new types:")
+        if (len(types) == N_phases and len(re.findall("[LlGgSs]", types)) == N_phases):
+            break
         else:
-            quit()
-    
+            continue
+
     # Format the input for future implementation
     types_formated = ""
     for i in types:
