@@ -93,6 +93,7 @@ def change_input_name(name):
         path = os.path.split(name)[0]+"\\"
     return name, path
     
+    
 def check_units(input_file_name):
     """ Check if unit=si is present in the .inp file
     
@@ -135,6 +136,7 @@ def check_parameterization(input_file_name):
             quit()
     return scale_water, parameter[index]
 
+    
 def check_phase_types(types, N_phases):
     """ Check the input phase types
     
@@ -284,13 +286,13 @@ def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2,
         phase2: Second phase as a list
         T: Temperature as a float
         IFT: IFT as a float
-        phase_types: Type of phases (Liquid L, Gas, G, Solid S, Coverge C) as a string
+        phase_types: Type of phases (Liquid L, Gas, G, Solid S) as a string
     
     Return:
         None
     """
     max_depth = ""
-    if phase_types == "SC" or phase_types == "CS":
+    if phase_types[0] == "S" or phase_types[1] == "S":
         max_depth = "maxdepth=2.0"
     
     with open(input_file_name+".inp", "r") as file:  # Read the inital input file
@@ -385,7 +387,7 @@ def calculate_coverage(phase, Gtot, R, T):
     
     
 def calculate_IFT(bulk_phase, Gtot_phase_bulk_surface, Gtot_phase_surface_bulk, area_phase_bulk_surface, area_phase_surface_bulk, coverage, R, T, unit_converter, phase_types):
-    """ Calculate IFT between two phases for either Liquid (L) - Surface Coverage (C)c Gas (G) - Surface Coverage (C) or Solid (S) - Surface Coverage (C)
+    """ Calculate IFT between two phases for either Liquid (L) - Surface Coverage (C)c Gas (G) - Surface Coverage (C) or Solid (S)
     
     Args:
         bulk_phase: Phase as a list
@@ -402,15 +404,15 @@ def calculate_IFT(bulk_phase, Gtot_phase_bulk_surface, Gtot_phase_surface_bulk, 
     Return:
         IFT: The sum of all interfacial tensions between phase and surface as a float
     """
-    if phase_types == "LC" or phase_types == "CL":
+    if phase_types[0] == "L" or phase_types[1] == "L":
         coverage_part = coverage*(Gtot_phase_bulk_surface-R*T*np.log(bulk_phase)+R*T*np.log(coverage))
         phase_part = bulk_phase*Gtot_phase_bulk_surface
         IFT = np.sum((coverage_part + phase_part)/(2*area_phase_bulk_surface)*unit_converter)
-    elif phase_types == "GC" or phase_types == "CG":
+    elif phase_types[0] == "G" or phase_types[1] == "G":
         coverage_part = coverage*(Gtot_phase_bulk_surface-R*T*np.log(bulk_phase)+R*T*np.log(coverage))
         phase_part = bulk_phase*Gtot_phase_bulk_surface
         IFT = np.sum((coverage_part + phase_part)/(2*area_phase_bulk_surface)*unit_converter)
-    elif phase_types == "SC" or phase_types == "CS":
+    elif phase_types[0] == "S" or phase_types[1] == "C":
         phase_part = bulk_phase*Gtot_phase_surface_bulk
         IFT = np.sum(phase_part/(2*area_phase_surface_bulk)*unit_converter)
     return IFT

@@ -65,7 +65,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     # Check phase types
     phase_types = check_phase_types(phase_types, 2)
     
-    # Check if this file water parameterization matches the input file
+    # Check if the water parameterization matches the input file
     scale_water, parameter = check_parameterization(input_file_name)
 
     # Read Number of compounds and Temperature from initial .inp file   
@@ -139,13 +139,12 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     convergence_flag = 0
     if save_output_file:
         open(output_path + "output.txt", "w").close()
-    phase_types = phase_types[0]+"C"+phase_types[1]  # Add coverage C as the middel phase
     while convergence_flag < convergence_criteria:
         iterations += 1
         
         # Create flatsurf files
-        write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types[:2])
-        write_flatsurf_file(input_file_name, "flatsurfBS", phase2, coverage, T, IFT_B_value, IFT_write_length, phase_types[1:])
+        write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types)
+        write_flatsurf_file(input_file_name, "flatsurfBS", phase2, coverage, T, IFT_B_value, IFT_write_length, phase_types)
 
         # Run both COSMOtherm instances simultaneously 
         if multiprocess:
@@ -180,8 +179,8 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         coverage /= np.sum(coverage)
 
         # Calculate IFT between phase and surface, using equation 3 for each direction
-        IFT_A = calculate_IFT(phase1, GtotAS, GtotSA, AreaAS, AreaSA, coverage, R, T, unit_converter, phase_types[:2])
-        IFT_B = calculate_IFT(phase2, GtotBS, GtotSB, AreaBS, AreaSB, coverage, R, T, unit_converter, phase_types[1:])
+        IFT_A = calculate_IFT(phase1, GtotAS, GtotSA, AreaAS, AreaSA, coverage, R, T, unit_converter, phase_types)
+        IFT_B = calculate_IFT(phase2, GtotBS, GtotSB, AreaBS, AreaSB, coverage, R, T, unit_converter, phase_types)
         
         # Damping IFT
         IFT_A_value = calculate_IFT_dampning(IFT_A, IFT_A_value, IFT_max_diff, IFT_dampning)
