@@ -71,7 +71,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     # Read Number of compounds and Temperature from initial .inp file   
     N_compounds, T = get_N_compounds_and_T(input_file_name)
     
-    if debug:    
+    if debug:
         print("N_compounds:", N_compounds, "Temperature:", T, "[K]")
 
     # Get the composition of the two phases from the .tab file for LL after LLE or from the .inp file for everything els    
