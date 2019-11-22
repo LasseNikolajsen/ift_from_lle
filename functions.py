@@ -4,7 +4,7 @@ import os
 import numpy as np
 import re
 
-# This document includes all the functions called in the IFT calculation script and the run_phases support script
+# This document includes all the functions called in the IFT calculation script and some called in the run_phases support script
 
 def get_user_and_path(user_name):
     """ Get COSMOtherm path from Users.txt file or add a new user based on user input
@@ -167,8 +167,10 @@ def check_phase_types(types, N_phases):
         else:
             print("Unknown error when checking the phase types")
             quit()
-        print("Do you want to change the phase types for this calculation?")
+        print("Do you want to change the phase types for this calculation? Write X to quit")
         types = input("Write new types:")
+        if types == "X":
+            quit()
         if (len(types) == N_phases and len(re.findall("[LlGgSs]", types)) == N_phases):
             break
         else:

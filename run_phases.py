@@ -6,7 +6,7 @@ import traceback
 import pandas as pd
 import numpy as np
 from ift_from_3phase import calculate_IFT_tot_and_coverage
-from functions import change_input_name, get_comp_and_phases, check_phase_types
+from functions import change_input_name, get_comp_and_phases, check_phase_types, check_units_get_liq_ex, get_N_compounds_and_T
 
 def run_IFT(input_file, error_attempts, phase_types, initials):
     """ Run IFT calculation again if a runtime error occurs
@@ -37,7 +37,7 @@ def run_IFT(input_file, error_attempts, phase_types, initials):
 
 def main():
     initials = "LVND"
-    phase_types = "LL"
+    phase_types = "LLS"
     error_attempts = 2
     
     
@@ -50,7 +50,7 @@ def main():
     input_file, output_path = change_input_name(input_file)
     
     
-    liq_ex = check_units_get_liq_ex(input_file_name)
+    liq_ex = check_units_get_liq_ex(input_file)
 
     phase_types = check_phase_types(phase_types, liq_ex)
     # if liq_ex != len(phase_types):
@@ -65,6 +65,7 @@ def main():
     ift, coverage = run_IFT(input_file, error_attempts, phase_types, initials)
     ift_list.append(ift)
     coverage_list.append(coverage)
+    N_compounds, T = get_N_compounds_and_T(input_file)
     
     # Make the header for printout
     header = ["Phase 1 ({})".format(phase_types[0]), "Surface 1-2", "Phase 2 ({})".format(phase_types[1])]
@@ -127,7 +128,7 @@ def main():
                 write.write(last_line)
                 
             # Run the IFT on the reverted concentrations
-            ift, coverage = run_IFT(input_file, error_attempts, phase_types[k:k+2], initials)
+            ift, coverage = run_IFT(input_file, error_attempts, phase_types, initials)
             ift_list.append(ift)
             coverage_list.append(coverage)
             

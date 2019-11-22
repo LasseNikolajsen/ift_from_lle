@@ -62,9 +62,6 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     # Check unit=si in input file
     liq_ex = check_units_get_liq_ex(input_file_name)
     
-    # Check phase types
-    phase_types = check_phase_types(phase_types, liq_ex)
-    
     # Check if the water parameterization matches the input file
     scale_water, parameter = check_parameterization(input_file_name)
 
@@ -73,6 +70,37 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     
     if debug:
         print("N_compounds:", N_compounds, "Temperature:", T, "[K]")
+    
+    # Check phase types
+    phase_types = check_phase_types(phase_types, liq_ex)
+    
+    if phase_types == "LL":
+        LLE = True
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    with open(input_file_name+".inp", "r") as file:
+        txt = file.read()
+        phase_index = re.findall("\w\d=", txt)
+    for i in range(len(phase_index)):
+        phase_index[i] = phase_index[i][1]
+    index1 = phase_index.index("1")
+    index2 = phase_index.index("2")
+    
+    phase_types_curr = phase_types[index1]+phase_types[index2]
+
+    LLE = False
+    if phase_types_curr == "LL":
+        LLE = True
+    
+
 
     # Get the composition of the two phases from the .tab file for LL after LLE or from the .inp file for everything els    
     if LLE:
@@ -92,16 +120,15 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         for i in np.where(phase2==0)[0]:
             phase2[i] = 1e-16
     
-    
     if print_statements:
         print_compound_list = "[ {}".format(compound_list[0])
         for i in compound_list[1:]:
             print_compound_list += "  " + i
         print_compound_list += "]"
-        print("Parameterization: {0} \nCompounds: {1} \nPhase 1:   {2} {3} \nPhase 2:   {4} {5}".format(parameter, print_compound_list, phase1, phase_types[0], phase2, phase_types[1]))    
+        print("Parameterization: {0} \nCompounds: {1} \nPhase 1:   {2} {3} \nPhase 2:   {4} {5}".format(parameter, print_compound_list, phase1, phase_types_curr[0], phase2, phase_types_curr[1]))    
 
     # Create flatsurfAB file
-    write_flatsurf_file(input_file_name, "flatsurfAB", phase1, phase2, T, start_ift, IFT_write_length, phase_types)
+    write_flatsurf_file(input_file_name, "flatsurfAB", phase1, phase2, T, start_ift, IFT_write_length, phase_types_curr)
 
     # Run COSMOtherm
     subprocess.call([COSMOtherm_path, "flatsurfAB.inp"])    
@@ -142,10 +169,10 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     while convergence_flag < convergence_criteria:
         iterations += 1
         if iterations == 2:
-            quit()
+            break
         # Create flatsurf files
-        write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types)
-        write_flatsurf_file(input_file_name, "flatsurfBS", phase2, coverage, T, IFT_B_value, IFT_write_length, phase_types)
+        write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types_curr)
+        write_flatsurf_file(input_file_name, "flatsurfBS", phase2, coverage, T, IFT_B_value, IFT_write_length, phase_types_curr)
 
         # Run both COSMOtherm instances simultaneously 
         if multiprocess:
@@ -180,8 +207,8 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         coverage /= np.sum(coverage)
 
         # Calculate IFT between phase and surface, using equation 3 for each direction
-        IFT_A = calculate_IFT(phase1, GtotAS, GtotSA, AreaAS, AreaSA, coverage, R, T, unit_converter, phase_types)
-        IFT_B = calculate_IFT(phase2, GtotBS, GtotSB, AreaBS, AreaSB, coverage, R, T, unit_converter, phase_types)
+        IFT_A = calculate_IFT(phase1, GtotAS, GtotSA, AreaAS, AreaSA, coverage, R, T, unit_converter, phase_types_curr)
+        IFT_B = calculate_IFT(phase2, GtotBS, GtotSB, AreaBS, AreaSB, coverage, R, T, unit_converter, phase_types_curr)
         
         # Damping IFT
         IFT_A_value = calculate_IFT_dampning(IFT_A, IFT_A_value, IFT_max_diff, IFT_dampning)
