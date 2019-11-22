@@ -45,21 +45,12 @@ def main():
     pd.set_option('display.max_rows', 50)
     pd.set_option('display.max_columns', 50)
     pd.set_option('display.width', 200)
-    path_to_COSMOfiles = r"C:\Users\lasse\OneDrive\KU\Kandidat\Projekt\COSMO\COSMOfiles"
     input_file = sys.argv[1]
     
     input_file, output_path = change_input_name(input_file)
     
     
-    # Find number of liquid extractions
-    with open(input_file+".inp","r") as file:
-        text = file.read()
-        # N compounds
-        obj_comp = re.findall(r"\{(?:\d*\.\d*[\ ,\}]*)+", text)  # Find first { with numbers behind it
-        N_compounds = len(obj_comp[0].split())  # Numbers in the {} in the file
-        # Find number of liquid extractions
-        obj_inp = re.findall(r"liq_ex=\d", text)
-        liq_ex = int(obj_inp[0][-1])
+    liq_ex = check_units_get_liq_ex(input_file_name)
 
     phase_types = check_phase_types(phase_types, liq_ex)
     # if liq_ex != len(phase_types):

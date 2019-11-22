@@ -56,7 +56,9 @@ def get_user_and_path(user_name):
         else:
             print("The script will terminate now")
             quit()
-
+    if os.path.isfile(COSMOtherm_path) == False:
+        print("Error: Could not find cosmotherm.exe at the specified path. Is the path correct for this computer or did you misspell something in the path?")
+        quit()
     return COSMOtherm_path
 
 
@@ -94,20 +96,29 @@ def change_input_name(name):
     return name, path
     
     
-def check_units(input_file_name):
+def check_units_get_liq_ex(input_file_name):
     """ Check if unit=si is present in the .inp file
     
     Args:
         input_file_name: The input file name without extension as a string
     
     Return:
-        None
+        liq_ex: The number of phases in the calculation as an integer
     """
     with open(input_file_name+".inp","r") as file:
         text = file.read()
         if re.findall(r"unit\ *=\ *[sS][iI]", text) == []:
             print("Warning: unit=si is missing from the input file.")
-    return
+    # Find number of liquid extractions
+    with open(input_file_name+".inp","r") as file:
+        text = file.read()
+        # N compounds
+        obj_comp = re.findall(r"\{(?:\d*\.\d*[\ ,\}]*)+", text)  # Find first { with numbers behind it
+        N_compounds = len(obj_comp[0].split())  # Numbers in the {} in the file
+        # Find number of liquid extractions
+        obj_inp = re.findall(r"liq_ex=\d", text)
+        liq_ex = int(obj_inp[0][-1])
+    return liq_ex
     
     
 def check_parameterization(input_file_name):

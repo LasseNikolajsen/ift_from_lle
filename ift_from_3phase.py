@@ -60,10 +60,10 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     input_file_name, output_path = change_input_name(input_file_name)
 
     # Check unit=si in input file
-    check_units(input_file_name)
+    liq_ex = check_units_get_liq_ex(input_file_name)
     
     # Check phase types
-    phase_types = check_phase_types(phase_types, 2)
+    phase_types = check_phase_types(phase_types, liq_ex)
     
     # Check if the water parameterization matches the input file
     scale_water, parameter = check_parameterization(input_file_name)
@@ -75,7 +75,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         print("N_compounds:", N_compounds, "Temperature:", T, "[K]")
 
     # Get the composition of the two phases from the .tab file for LL after LLE or from the .inp file for everything els    
-    if phase_types == "LL":
+    if LLE:
         subprocess.call([COSMOtherm_path, input_file_name+".inp"])
         compound_list, phase1, phase2 = get_comp_and_phases_for_LL(input_file_name, N_compounds)
     else:
@@ -141,7 +141,8 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         open(output_path + "output.txt", "w").close()
     while convergence_flag < convergence_criteria:
         iterations += 1
-        
+        if iterations == 2:
+            quit()
         # Create flatsurf files
         write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types)
         write_flatsurf_file(input_file_name, "flatsurfBS", phase2, coverage, T, IFT_B_value, IFT_write_length, phase_types)
