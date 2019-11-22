@@ -168,8 +168,6 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         open(output_path + "output.txt", "w").close()
     while convergence_flag < convergence_criteria:
         iterations += 1
-        if iterations == 2:
-            break
         # Create flatsurf files
         write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types_curr)
         write_flatsurf_file(input_file_name, "flatsurfBS", phase2, coverage, T, IFT_B_value, IFT_write_length, phase_types_curr)
