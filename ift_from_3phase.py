@@ -12,7 +12,7 @@ from multiprocessing import Pool, cpu_count
 # Water should be called "h2o" and vacuum should be called "vacuum"
 
 
-def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = True, 
+def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
                                     multiprocess = True, delete_files = True, save_output_file = True):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
@@ -75,13 +75,10 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     
     # Check phase types
     phase_types = check_phase_types(phase_types, 2)
-    
-    LLE = False
-    if phase_types == "LL":
-        LLE = True
-    
+
     # Get the composition of the two phases from the .tab file for LL after LLE or from the .inp file for everything els    
-    if LLE:
+    if phase_types == "LL":
+        print("HEY LLE")
         subprocess.call([COSMOtherm_path, input_file_name+".inp"])
         compound_list, phase1, phase2 = get_comp_and_phases_for_LL(input_file_name, N_compounds)
     else:
