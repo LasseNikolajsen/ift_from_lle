@@ -425,7 +425,7 @@ def calculate_IFT(bulk_phase, Gtot_phase_bulk_surface, Gtot_phase_surface_bulk, 
         coverage_part = coverage*(Gtot_phase_bulk_surface-R*T*np.log(bulk_phase)+R*T*np.log(coverage))
         phase_part = bulk_phase*Gtot_phase_bulk_surface
         IFT = np.sum((coverage_part + phase_part)/(2*area_phase_bulk_surface)*unit_converter)
-    elif phase_types[0] == "S" or phase_types[1] == "C":
+    elif phase_types[0] == "S" or phase_types[1] == "S":
         phase_part = bulk_phase*Gtot_phase_surface_bulk
         IFT = np.sum(phase_part/(2*area_phase_surface_bulk)*unit_converter)
     return IFT

@@ -9,7 +9,7 @@ def main():
     
     IFT_W_S = 19.57251427315493
     IFT_O_S = 6.882476613958883
-    IFT_O_W = 2.4479016287077213
+    IFT_O_W = 46.87030111026727
 
     right_side = (IFT_O_S - IFT_W_S) / IFT_O_W
     
