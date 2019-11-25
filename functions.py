@@ -157,7 +157,7 @@ def check_phase_types(types, N_phases):
     Return:
         types: As a formated string
     """
-    # Check the input
+    # Check the input and call for new input if the input does not match the input file
     correct_phase = (len(types) != N_phases or len(re.findall("[LlGgSs]", types)) != N_phases)
     while(correct_phase):
         if(len(types) != N_phases):
@@ -289,7 +289,7 @@ def get_comp_and_phases(input_file_name, N_compounds):
     return compound_list, phase1, phase2
     
     
-def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2, T, IFT, IFT_write_length, phase_types):
+def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2, T, IFT, IFT_write_length, phase_types, max_depth):
     """ Create new .inp files for flatsurf calculations
     
     Args:
@@ -304,9 +304,9 @@ def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2,
     Return:
         None
     """
-    max_depth = ""
+    max_depth_str = ""
     if phase_types[0] == "S" or phase_types[1] == "S":
-        max_depth = "maxdepth=2.0"
+        max_depth_str = "maxdepth="+str(max_depth)
     
     with open(input_file_name+".inp", "r") as file:  # Read the inital input file
         lines = file.readlines()
@@ -315,7 +315,7 @@ def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2,
             output.writelines(lines[:-1])  # All lines except the last
             # Last line 
             (output.write("tk={0} FLATSURF xf1={{{1}}} xf2={{{2}}} IGNORE_CHARGE {5} IFT={3:.{4}f} \n".
-            format(T, "  ".join(map(str,phase1)), "  ".join(map(str,phase2)), IFT, IFT_write_length, max_depth)))
+            format(T, "  ".join(map(str,phase1)), "  ".join(map(str,phase2)), IFT, IFT_write_length, max_depth_str)))
     return
     
 
