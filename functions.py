@@ -109,6 +109,8 @@ def check_units_get_liq_ex(input_file_name):
         text = file.read()
         if re.findall(r"unit\ *=\ *[sS][iI]", text) == []:
             print("Warning: unit=si is missing from the input file.")
+        if len(re.findall(r"unit", text)) > 1:
+            print("Warning: Multiple instances of unit in the input file, COSMOtherm might not use the correct units.")
     # Find number of liquid extractions
     with open(input_file_name+".inp","r") as file:
         text = file.read()
@@ -267,10 +269,11 @@ def get_comp_and_phases(input_file_name, N_compounds):
     
     with open(input_file_name+".inp","r") as file:
         lines = file.read()
-        compound_object = re.findall(r"[f]\s*=\s*\S*", lines)
+        compound_object = re.findall(r"f\ *=\ *[\w\S\ ]* VPfile", lines)
+        #print(compound_object)
         phase_object = re.findall(r"[^w]\d\ *=\ *\{[\d \. \ * e \-]*", lines)
         for i in range(N_compounds):
-            compound_list.append(compound_object[i].split()[-1].split("_")[0])
+            compound_list.append(compound_object[i].split()[2].split("_")[0])
         for j in phase_object:
             if j[1] == "1":
                 for k in j.split():
@@ -395,6 +398,8 @@ def calculate_coverage(phase, Gtot, R, T):
     Return:
         coverage: Surface coverage as an array
     """
+    print("phase", phase)
+    print("exp", np.exp(-Gtot/(R*T)))
     coverage = phase*np.exp(-Gtot/(R*T))
     return coverage 
     

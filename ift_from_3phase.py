@@ -13,7 +13,7 @@ from multiprocessing import Pool, cpu_count
 
 
 def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
-                                    multiprocess = True, delete_files = True, save_output_file = True):
+                                    multiprocess = True, delete_files = False, save_output_file = True, forced_convergence = True):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
     Args: 
@@ -42,6 +42,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     scale_organic = 1  # /0.91/0.8
     R = 8.314*1e-3  # The gas constant in kJ/mol/K
     unit_converter = 1.66  # Converts to mN/m
+    max_iterations = 10  # force converges the while loop after max_iterations
     # Coverage
     max_CF = 2
     coverage_dampning = 0.5
@@ -88,10 +89,12 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     # If there is a 0 in phase1, convert it to 10^-16
     if 0 in phase1:
         for i in np.where(phase1==0)[0]:
+            print("Warning: Added 1e-16 to a concentration in phase 1, which was 0.0")
             phase1[i] = 1e-16
     # If there is a 0 in phase2, convert it to 10^-16
     if 0 in phase2:
         for i in np.where(phase2==0)[0]:
+            print("Warning: Added 1e-16 to a concentration in phase 2, which was 0.0")
             phase2[i] = 1e-16
     
     if print_statements:
@@ -124,8 +127,9 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     # If there is a 0 in the coverage, convert it to 10^-16
     if 0 in coverage:
         for i in np.where(coverage==0)[0]:
+            print("Warning: Added 1e-16 to a value in coverage, which was 0.0")
             coverage[i] = 1e-16
-
+    
     IFT_A_value = start_ift
     IFT_B_value = start_ift
     IFT_tot = start_ift
@@ -143,6 +147,10 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         open(output_path + "output.txt", "w").close()
     while convergence_flag < convergence_criteria:
         iterations += 1
+        
+        if iterations == max_iterations and forced_convergence:
+            print("The script ended before convergence!\nPhase 1:  {} \nCoverage: {} \nPhase 2:  {} \nTotal IFT: {}".format(phase1, coverage, phase2, IFT_tot))
+            break
         
         # Create flatsurf files
         write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types[:2], max_depth)
@@ -168,10 +176,11 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         AreaAS, AreaSA = scale_area(compound_list, AreaAS, AreaSA, N_compounds, scale_water, scale_organic)
         AreaBS, AreaSB = scale_area(compound_list, AreaBS, AreaSB, N_compounds, scale_water, scale_organic)
         
+        #print(GtotAS, GtotBS)
         # Calculate coverages
         coverage_A = calculate_coverage(phase1, GtotAS, R, T)
         coverage_B = calculate_coverage(phase2, GtotBS, R, T)
-
+        #print(coverage_A, coverage_B, coverage_A*coverage_B)
         # Calculate coverage factor (CF) and replace the value if it is too high or too low
         CF = np.power((coverage_A*coverage_B/coverage**2), coverage_dampning)
         CF[CF>max_CF] = max_CF
@@ -220,7 +229,8 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             if os.path.exists(files[i]):
                 os.remove(files[i])
     np.set_printoptions(suppress = True)
-    print("The script has converged!\nPhase 1:  {} \nCoverage: {} \nPhase 2:  {} \nTotal IFT: {}".format(phase1, coverage, phase2, IFT_tot))
+    if iterations < max_iterations or not forced_convergence:
+        print("The script has converged!\nPhase 1:  {} \nCoverage: {} \nPhase 2:  {} \nTotal IFT: {}".format(phase1, coverage, phase2, IFT_tot))
     return coverage, IFT_tot
 
 
