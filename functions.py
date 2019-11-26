@@ -6,6 +6,36 @@ import re
 
 # This document includes all the functions called in the IFT calculation script and some called in the run_phases support script
 
+def get_liquid_index(phase1, phase2, phase_types):
+    """ Get the indecies where the compounds are above 0.0 in the liquid phase
+    
+    Args:
+        phase1: The first phase
+        phase2: The second phase
+        phase_types: The types of phase 1 and phase 2
+        
+    Return:
+        liquid_index: The index for compounds in the liquid phase above 0.0, as a list
+        solid_index: The index for compounds in the solid phase above 0.0, as a list
+    """
+    liquid_index = []
+    solid_index = []
+    
+    if phase_types == "SL":
+        for i in range(len(phase1)):
+            if phase1[i] > 0.0:
+                solid_index.append(i)
+            else:
+                liquid_index.append(i)
+    if phase_types == "LS":
+        for i in range(len(phase2)):
+            if phase2[i] > 0.0:
+                solid_index.append(i)
+            else:
+                liquid_index.append(i)
+    return liquid_index, solid_index
+
+
 def get_user_and_path(user_name):
     """ Get COSMOtherm path from Users.txt file or add a new user based on user input
     
@@ -389,7 +419,7 @@ def scale_area(compound_list, AreaAB, AreaBA, N_compounds, scale_water, scale_or
     return AreaAB, AreaBA  
 
     
-def calculate_coverage(phase, Gtot, R, T):
+def calculate_coverage(phase, Gtot, R, T, liquid_index):
     """ Calculate surface coverage between a phase and surface
     
     Args:
@@ -397,15 +427,21 @@ def calculate_coverage(phase, Gtot, R, T):
         Gtot: The input phases Gtot as an array
         R: The gas constant in kj/mol/K as a float
         T: The temperature in Kelvin as a float
+        liquid_index: The index for the liquid phase, if a solid phase is present
         
     Return:
         coverage: Surface coverage as an array
     """
-    coverage = phase*np.exp(-Gtot/(R*T))
+    coverage = np.zeros(len(phase))
+    for i in range(len(phase)):
+        if i in liquid_index:
+            coverage[i] = phase[i]*np.exp(-Gtot[i]/(R*T))
+        else:
+            coverage[i] = 0.0
     return coverage 
     
     
-def calculate_IFT(bulk_phase, Gtot_phase_bulk_surface, Gtot_phase_surface_bulk, area_phase_bulk_surface, area_phase_surface_bulk, coverage, R, T, unit_converter, phase_types):
+def calculate_IFT(bulk_phase, Gtot_phase_bulk_surface, Gtot_phase_surface_bulk, area_phase_bulk_surface, area_phase_surface_bulk, coverage, R, T, unit_converter, phase_types, liquid_index):
     """ Calculate IFT between two phases for either Liquid (L) - Surface Coverage (C)c Gas (G) - Surface Coverage (C) or Solid (S)
     
     Args:
@@ -424,9 +460,9 @@ def calculate_IFT(bulk_phase, Gtot_phase_bulk_surface, Gtot_phase_surface_bulk, 
         IFT: The sum of all interfacial tensions between phase and surface as a float
     """
     if phase_types[0] == "L" or phase_types[1] == "L":
-        coverage_part = coverage*(Gtot_phase_bulk_surface-R*T*np.log(bulk_phase)+R*T*np.log(coverage))
-        phase_part = bulk_phase*Gtot_phase_bulk_surface
-        IFT = np.sum((coverage_part + phase_part)/(2*area_phase_bulk_surface)*unit_converter)
+        coverage_part = coverage[liquid_index]*(Gtot_phase_bulk_surface[liquid_index]-R*T*np.log(bulk_phase[liquid_index])+R*T*np.log(coverage[liquid_index]))
+        phase_part = bulk_phase[liquid_index]*Gtot_phase_bulk_surface[liquid_index]
+        IFT = np.sum((coverage_part + phase_part)/(2*area_phase_bulk_surface[liquid_index])*unit_converter)
     elif phase_types[0] == "G" or phase_types[1] == "G":
         coverage_part = coverage*(Gtot_phase_bulk_surface-R*T*np.log(bulk_phase)+R*T*np.log(coverage))
         phase_part = bulk_phase*Gtot_phase_bulk_surface

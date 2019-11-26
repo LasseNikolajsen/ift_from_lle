@@ -13,7 +13,7 @@ from multiprocessing import Pool, cpu_count
 
 
 def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
-                                    multiprocess = True, delete_files = True, save_output_file = True, forced_convergence = False):
+                                    multiprocess = True, delete_files = True, save_output_file = True, forced_convergence = True):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
     Args: 
@@ -87,16 +87,21 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         
     phase1 = phase1/np.sum(phase1)
     phase2 = phase2/np.sum(phase2)
+    
+    liquid_index, solid_index = get_liquid_index(phase1, phase2, phase_types)
+    print("HEY", liquid_index, solid_index)
+    
     # If there is a 0 in phase1, convert it to 10^-16
-    if 0 in phase1:
-        for i in np.where(phase1==0)[0]:
+    if 0 in phase1[liquid_index]:
+        for i in np.where(phase1[liquid_index]==0)[0]:
             print("Warning: Added 1e-16 to a concentration in phase 1, which was 0.0")
             phase1[i] = 1e-16
     # If there is a 0 in phase2, convert it to 10^-16
-    if 0 in phase2:
-        for i in np.where(phase2==0)[0]:
+    if 0 in phase2[liquid_index]:
+        for i in np.where(phase2[liquid_index]==0)[0]:
             print("Warning: Added 1e-16 to a concentration in phase 2, which was 0.0")
             phase2[i] = 1e-16
+   
     
     if print_statements:
         print_compound_list = "[ {}".format(compound_list[0])
@@ -123,11 +128,9 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
 
     # Calculate the coverage in the interface between A and B, using equation 1
     if phase_types == "LL":
-        coverage = np.sqrt(calculate_coverage(phase1, GtotAB, R, T) * calculate_coverage(phase2, GtotBA, R, T))
+        coverage = np.sqrt(calculate_coverage(phase1, GtotAB, R, T, liquid_index) * calculate_coverage(phase2, GtotBA, R, T, liquid_index))
     elif phase_types == "LS":
-        coverage = calculate_coverage(phase1, GtotAB, R, T)
-    elif phase_types == "SL":
-        coverage = calculate_coverage(phase2, GtotBA, R, T)
+        coverage = calculate_coverage(phase1, GtotAB, R, T, liquid_index)
     else:
         print("Coverage calculation is wrong")
         quit()
@@ -135,10 +138,10 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     # Normalize coverage, using equation 2
     coverage /= np.sum(coverage)
     # If there is a 0 in the coverage, convert it to 10^-16
-    if 0 in coverage:
-        for i in np.where(coverage==0)[0]:
-            print("Warning: Added 1e-16 to a value in coverage, which was 0.0")
-            coverage[i] = 1e-16
+    # if 0 in coverage:
+        # for i in np.where(coverage==0)[0]:
+            # print("Warning: Added 1e-16 to a value in coverage, which was 0.0")
+            # coverage[i] = 1e-16
     
     IFT_A_value = start_ift
     IFT_B_value = start_ift
@@ -189,8 +192,8 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         #print(GtotAS, GtotBS)
         # Calculate coverages
         if phase_types == "LCL":
-            coverage_A = calculate_coverage(phase1, GtotAS, R, T)
-            coverage_B = calculate_coverage(phase2, GtotBS, R, T)
+            coverage_A = calculate_coverage(phase1, GtotAS, R, T, liquid_index)
+            coverage_B = calculate_coverage(phase2, GtotBS, R, T, liquid_index)
             # Calculate coverage factor (CF) and replace the value if it is too high or too low
             CF = np.power((coverage_A*coverage_B/coverage**2), coverage_dampning)
             CF[CF>max_CF] = max_CF
@@ -199,37 +202,25 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             coverage = coverage*CF
             coverage /= np.sum(coverage)
         elif phase_types == "LCS":
-            coverage_A = calculate_coverage(phase1, GtotAS, R, T)
-            #coverage_B = calculate_coverage(phase2, GtotBS, R, T)
-            #print(coverage_A, coverage_B, coverage_A*coverage_B)
+            coverage_A = calculate_coverage(phase1, GtotAS, R, T, liquid_index)
             # Calculate coverage factor (CF) and replace the value if it is too high or too low
-            CF = np.power((coverage_A[:-1]/coverage[:-1]), coverage_dampning)
+            CF = np.power((coverage_A[liquid_index]/coverage[liquid_index]), coverage_dampning)
             CF[CF>max_CF] = max_CF
             CF[CF<1/max_CF] = 1/max_CF
             # Calculate new coverage
-            coverage = coverage*CF
+            coverage[liquid_index] = coverage[liquid_index]*CF
             #coverage[-1] = 0.0
             #print(coverage[-1])
             coverage /= np.sum(coverage)
-        elif phase_types == "SCL":
-            #coverage_A = calculate_coverage(phase1, GtotAS, R, T)
-            coverage_B = calculate_coverage(phase2, GtotBS, R, T)
-            #print(coverage_A, coverage_B, coverage_A*coverage_B)
-            # Calculate coverage factor (CF) and replace the value if it is too high or too low
-            CF = np.power((coverage_B/coverage), coverage_dampning)
-            CF[CF>max_CF] = max_CF
-            CF[CF<1/max_CF] = 1/max_CF
-            # Calculate new coverage
-            coverage = coverage*CF
-            coverage /= np.sum(coverage)
-            coverage[-1] = 0.0
         else:
             print("Something went wrong in the surface coverage calculation.")
             quit()
 
         # Calculate IFT between phase and surface, using equation 3 for each direction
-        IFT_A = calculate_IFT(phase1, GtotAS, GtotSA, AreaAS, AreaSA, coverage, R, T, unit_converter, phase_types[:2])
-        IFT_B = calculate_IFT(phase2, GtotBS, GtotSB, AreaBS, AreaSB, coverage, R, T, unit_converter, phase_types[1:])
+        IFT_A = calculate_IFT(phase1, GtotAS, GtotSA, AreaAS, AreaSA, coverage, R, T, 
+                              unit_converter, phase_types[:2], liquid_index)
+        IFT_B = calculate_IFT(phase2, GtotBS, GtotSB, AreaBS, AreaSB, coverage, R, T, 
+                              unit_converter, phase_types[1:], liquid_index)
         
         # Damping IFT
         IFT_A_value = calculate_IFT_dampning(IFT_A, IFT_A_value, IFT_max_diff, IFT_dampning)
