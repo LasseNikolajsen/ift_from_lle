@@ -33,7 +33,6 @@ def get_user_and_path(user_name):
                 else:
                     full_path += i + " "
             path_list.append(full_path)
-            print(path_list)
     try:   # Try and find the user name in the Users.txt file
         index = user_list.index(user_name)
         COSMOtherm_path = path_list[index]
@@ -59,7 +58,6 @@ def get_user_and_path(user_name):
         else:
             print("The script will terminate now")
             quit()
-    print(COSMOtherm_path)
     if os.path.isfile(COSMOtherm_path) == False:
         print("Error: Could not find cosmotherm.exe at the specified path. Is the path correct for this computer or did you misspell something in the path?")
         quit()

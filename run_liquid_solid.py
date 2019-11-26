@@ -7,13 +7,13 @@ from functions import change_input_name
 
 def main():
     
-    IFT_W_S = 19.57251427315493
-    IFT_O_S = 6.882476613958883
+    IFT_W_S = -24.73807497629719
+    IFT_O_S = 6.089386410468025
     IFT_O_W = 46.87030111026727
 
     right_side = (IFT_O_S - IFT_W_S) / IFT_O_W
     
-    if abs(right_side) > 1:
+    if right_side > 1:
         print("Error: Can not take arccos to a number ouside the range [-1,1]. Please check the calculated energies.")
         print("The calculated number is {}.".format(right_side))
     else:

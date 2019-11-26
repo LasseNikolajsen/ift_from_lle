@@ -13,7 +13,7 @@ from multiprocessing import Pool, cpu_count
 
 
 def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
-                                    multiprocess = True, delete_files = False, save_output_file = True, forced_convergence = False):
+                                    multiprocess = True, delete_files = True, save_output_file = True, forced_convergence = False):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
     Args: 
@@ -123,13 +123,10 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
 
     # Calculate the coverage in the interface between A and B, using equation 1
     if phase_types == "LL":
-        print("Initial coverage - LL")
         coverage = np.sqrt(calculate_coverage(phase1, GtotAB, R, T) * calculate_coverage(phase2, GtotBA, R, T))
     elif phase_types == "LS":
-        print("Initial coverage - LS")
         coverage = calculate_coverage(phase1, GtotAB, R, T)
     elif phase_types == "SL":
-        print("Initial coverage - SL")
         coverage = calculate_coverage(phase2, GtotBA, R, T)
     else:
         print("Coverage calculation is wrong")
@@ -192,7 +189,6 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         #print(GtotAS, GtotBS)
         # Calculate coverages
         if phase_types == "LCL":
-            print("Surface coverage - LCL")
             coverage_A = calculate_coverage(phase1, GtotAS, R, T)
             coverage_B = calculate_coverage(phase2, GtotBS, R, T)
             # Calculate coverage factor (CF) and replace the value if it is too high or too low
@@ -203,20 +199,19 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             coverage = coverage*CF
             coverage /= np.sum(coverage)
         elif phase_types == "LCS":
-            print("Surface coverage - LCS")
             coverage_A = calculate_coverage(phase1, GtotAS, R, T)
             #coverage_B = calculate_coverage(phase2, GtotBS, R, T)
             #print(coverage_A, coverage_B, coverage_A*coverage_B)
             # Calculate coverage factor (CF) and replace the value if it is too high or too low
-            CF = np.power((coverage_A/coverage), coverage_dampning)
+            CF = np.power((coverage_A[:-1]/coverage[:-1]), coverage_dampning)
             CF[CF>max_CF] = max_CF
             CF[CF<1/max_CF] = 1/max_CF
             # Calculate new coverage
             coverage = coverage*CF
+            #coverage[-1] = 0.0
+            #print(coverage[-1])
             coverage /= np.sum(coverage)
-            coverage[-1] = 0.0
         elif phase_types == "SCL":
-            print("Surface coverage - SCL")
             #coverage_A = calculate_coverage(phase1, GtotAS, R, T)
             coverage_B = calculate_coverage(phase2, GtotBS, R, T)
             #print(coverage_A, coverage_B, coverage_A*coverage_B)
