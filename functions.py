@@ -398,8 +398,6 @@ def calculate_coverage(phase, Gtot, R, T):
     Return:
         coverage: Surface coverage as an array
     """
-    print("phase", phase)
-    print("exp", np.exp(-Gtot/(R*T)))
     coverage = phase*np.exp(-Gtot/(R*T))
     return coverage 
     
