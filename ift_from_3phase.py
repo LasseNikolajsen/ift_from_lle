@@ -199,6 +199,9 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             CF = np.power((coverage_A*coverage_B/coverage**2), coverage_dampning)
             CF[CF>max_CF] = max_CF
             CF[CF<1/max_CF] = 1/max_CF
+            # Calculate new coverage
+            coverage = coverage*CF
+            coverage /= np.sum(coverage)
         elif phase_types == "LCS":
             print("Surface coverage - LCS")
             coverage_A = calculate_coverage(phase1, GtotAS, R, T)
@@ -208,6 +211,10 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             CF = np.power((coverage_A/coverage), coverage_dampning)
             CF[CF>max_CF] = max_CF
             CF[CF<1/max_CF] = 1/max_CF
+            # Calculate new coverage
+            coverage = coverage*CF
+            coverage /= np.sum(coverage)
+            coverage[-1] = 0.0
         elif phase_types == "SCL":
             print("Surface coverage - SCL")
             #coverage_A = calculate_coverage(phase1, GtotAS, R, T)
@@ -217,12 +224,13 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             CF = np.power((coverage_B/coverage), coverage_dampning)
             CF[CF>max_CF] = max_CF
             CF[CF<1/max_CF] = 1/max_CF
+            # Calculate new coverage
+            coverage = coverage*CF
+            coverage /= np.sum(coverage)
+            coverage[-1] = 0.0
         else:
             print("Something went wrong in the surface coverage calculation.")
             quit()
-        # Calculate new coverage
-        coverage = coverage*CF
-        coverage /= np.sum(coverage)
 
         # Calculate IFT between phase and surface, using equation 3 for each direction
         IFT_A = calculate_IFT(phase1, GtotAS, GtotSA, AreaAS, AreaSA, coverage, R, T, unit_converter, phase_types[:2])

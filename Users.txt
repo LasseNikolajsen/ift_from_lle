@@ -1,5 +1,5 @@
 Name: LVN
-Path: C:\Program Files\COSMOlogic\COSMOthermX19\COSMOtherm\BIN-WINDOWS\cosmotherm.exe
+Path: C:\Program Files\COSMOlogic\COSMOthermX19\COSMOtherm\BIN-WINDOWScosmotherm.exe
 
 Name: MPA
 Path: /Applications/COSMOlogic/COSMOthermX18/COSMOtherm/BIN-LINUX/cosmotherm
