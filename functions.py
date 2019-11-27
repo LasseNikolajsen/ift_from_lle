@@ -21,13 +21,17 @@ def get_liquid_index(phase1, phase2, phase_types):
     liquid_index = []
     solid_index = []
     
-    if phase_types == "SL":
+    if phase_types == "LL":
+        for i in range(len(phase1)):
+            liquid_index.append(i)
+    
+    elif phase_types == "SL":
         for i in range(len(phase1)):
             if phase1[i] > 0.0:
                 solid_index.append(i)
             else:
                 liquid_index.append(i)
-    if phase_types == "LS":
+    elif phase_types == "LS":
         for i in range(len(phase2)):
             if phase2[i] > 0.0:
                 solid_index.append(i)
@@ -441,7 +445,8 @@ def calculate_coverage(phase, Gtot, R, T, liquid_index):
     return coverage 
     
     
-def calculate_IFT(bulk_phase, Gtot_phase_bulk_surface, Gtot_phase_surface_bulk, area_phase_bulk_surface, area_phase_surface_bulk, coverage, R, T, unit_converter, phase_types, liquid_index):
+def calculate_IFT(bulk_phase, Gtot_phase_bulk_surface, Gtot_phase_surface_bulk, area_phase_bulk_surface, area_phase_surface_bulk, 
+                  coverage, R, T, unit_converter, phase_types, liquid_index):
     """ Calculate IFT between two phases for either Liquid (L) - Surface Coverage (C)c Gas (G) - Surface Coverage (C) or Solid (S)
     
     Args:
@@ -468,7 +473,7 @@ def calculate_IFT(bulk_phase, Gtot_phase_bulk_surface, Gtot_phase_surface_bulk, 
         phase_part = bulk_phase*Gtot_phase_bulk_surface
         IFT = np.sum((coverage_part + phase_part)/(2*area_phase_bulk_surface)*unit_converter)
     elif phase_types[0] == "S" or phase_types[1] == "S":
-        phase_part = bulk_phase*Gtot_phase_surface_bulk
+        phase_part = coverage*Gtot_phase_surface_bulk
         IFT = np.sum(phase_part/(2*area_phase_surface_bulk)*unit_converter)
     return IFT
 

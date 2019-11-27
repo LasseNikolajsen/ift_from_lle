@@ -13,7 +13,7 @@ from multiprocessing import Pool, cpu_count
 
 
 def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
-                                    multiprocess = True, delete_files = True, save_output_file = True, forced_convergence = True):
+                                    multiprocess = True, delete_files = True, save_output_file = True, forced_convergence = False):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
     Args: 
@@ -89,15 +89,15 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     phase2 = phase2/np.sum(phase2)
     
     liquid_index, solid_index = get_liquid_index(phase1, phase2, phase_types)
-    print("HEY", liquid_index, solid_index)
+    print("Liquid index:", liquid_index, "\nSolid index:", solid_index)
     
     # If there is a 0 in phase1, convert it to 10^-16
-    if 0 in phase1[liquid_index]:
+    if 0 in phase1[liquid_index] and phase_types[0] == "L":
         for i in np.where(phase1[liquid_index]==0)[0]:
             print("Warning: Added 1e-16 to a concentration in phase 1, which was 0.0")
             phase1[i] = 1e-16
     # If there is a 0 in phase2, convert it to 10^-16
-    if 0 in phase2[liquid_index]:
+    if 0 in phase2[liquid_index] and phase_types[1] == "L":
         for i in np.where(phase2[liquid_index]==0)[0]:
             print("Warning: Added 1e-16 to a concentration in phase 2, which was 0.0")
             phase2[i] = 1e-16
@@ -138,10 +138,10 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     # Normalize coverage, using equation 2
     coverage /= np.sum(coverage)
     # If there is a 0 in the coverage, convert it to 10^-16
-    # if 0 in coverage:
-        # for i in np.where(coverage==0)[0]:
-            # print("Warning: Added 1e-16 to a value in coverage, which was 0.0")
-            # coverage[i] = 1e-16
+    if 0 in coverage[liquid_index]:
+        for i in np.where(coverage[liquid_index]==0)[0]:
+            print("Warning: Added 1e-16 to a value in coverage, which was 0.0")
+            coverage[i] = 1e-16
     
     IFT_A_value = start_ift
     IFT_B_value = start_ift

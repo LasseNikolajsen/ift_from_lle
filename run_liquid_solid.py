@@ -7,18 +7,32 @@ from functions import change_input_name
 
 def main():
     
-    IFT_W_S = -24.73807497629719
-    IFT_O_S = 6.089386410468025
-    IFT_O_W = 46.87030111026727
-
-    right_side = (IFT_O_S - IFT_W_S) / IFT_O_W
+    # n-decane
+    # IFT_W_S = 64.9449187143066
+    # IFT_O_S = -12.500284722858611
+    # IFT_O_W = 46.870301105580424
     
-    if right_side > 1:
+    # 1-octanol
+    # IFT_W_S = -18.626208743461117
+    # IFT_O_S = 10.935139924034504
+    # IFT_O_W = 46.870301105580424
+
+    # acetic acid
+    IFT_W_S = -14.774634533876746
+    IFT_O_S = 9.751316977037327
+    IFT_O_W = 46.870301105580424
+    
+    
+    youngs_eq = (IFT_O_S - IFT_W_S) / IFT_O_W
+    if youngs_eq > 1:
         print("Error: Can not take arccos to a number ouside the range [-1,1]. Please check the calculated energies.")
-        print("The calculated number is {}.".format(right_side))
-    else:
-        contact_angle = np.arccos(-1) * (180/np.pi)
-        print("Contact angle:", contact_angle)
+        print("The calculated number is {}.".format(youngs_eq))
+        quit()
+    elif youngs_eq < -1:
+        youngs_eq = -1
+        
+    contact_angle = np.arccos(youngs_eq) * (180/np.pi)
+    print("Contact angle:", contact_angle)
 
 
 
