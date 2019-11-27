@@ -83,7 +83,9 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         subprocess.call([COSMOtherm_path, input_file_name+".inp"])
         compound_list, phase1, phase2 = get_comp_and_phases_for_LL(input_file_name, N_compounds)
     else:
-        compound_list, phase1, phase2 = get_comp_and_phases(input_file_name, N_compounds)
+        compound_list, phases = get_comp_and_phases(input_file_name, N_compounds)
+        phase1 = phases[0]
+        phase2 = phases[1]
         
     phase1 = phase1/np.sum(phase1)
     phase2 = phase2/np.sum(phase2)

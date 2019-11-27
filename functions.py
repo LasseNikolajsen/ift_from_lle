@@ -297,12 +297,10 @@ def get_comp_and_phases(input_file_name, N_compounds):
         
     Return:
         compound_list: Compound names as a list
-        phase1: Phase 1 as a np.array of floats
-        phase2: Phase 2 as a np.array of floats
+        phases: A list of the phases, each phase is an np.array
     """
     compound_list = []
-    phase1 = []
-    phase2 = []
+    phases = []
     
     with open(input_file_name+".inp","r") as file:
         lines = file.read()
@@ -314,23 +312,19 @@ def get_comp_and_phases(input_file_name, N_compounds):
                 compound_list.append(compound_object[i].split()[2].split(".")[0].strip("\""))
             else:
                 compound_list.append(comp[0].split(" ")[-1].strip("\""))
-                
-        for j in phase_object:
-            if j[1] == "1":
-                for k in j.split():
+        
+        phase_counter = 1
+        for j in range(len(phase_object)):
+            phase = []
+            if phase_object[j][1] == str(phase_counter):
+                for k in phase_object[j].split():
                     if re.findall(r"[^w]\d\ *=\ *\{", k) != []:
-                        phase1.append(float(k.split("{")[1]))
+                        phase.append(float(k.split("{")[1]))
                     else:
-                        phase1.append(float(k))
-            if j[1] == "2":
-                for k in j.split():
-                    if re.findall(r"[^w]\d\ *=\ *\{", k) != []:
-                        phase2.append(float(k.split("{")[1]))
-                    else:
-                        phase2.append(float(k))
-        phase1 = np.array(phase1)
-        phase2 = np.array(phase2)
-    return compound_list, phase1, phase2
+                        phase.append(float(k))
+                phases.append(np.array(phase))
+                phase_counter += 1
+    return compound_list, phases
     
     
 def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2, T, IFT, IFT_write_length, phase_types, max_depth):
