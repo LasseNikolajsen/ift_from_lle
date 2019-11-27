@@ -280,7 +280,7 @@ def get_comp_and_phases_for_LL(input_file_name, N_compounds):
         index1 = lines[-1-N_compounds].split().index("phase_1_x")
         index2 = lines[-1-N_compounds].split().index("phase_2_x")
         for i in range(-N_compounds,0,1):
-            compound_list.append(lines[i].split()[1])
+            compound_list.append(lines[i].split()[1].strip("\""))
             phase1.append(float(lines[i].split()[index1]))
             phase2.append(float(lines[i].split()[index2]))
         phase1 = np.array(phase1)
@@ -307,10 +307,14 @@ def get_comp_and_phases(input_file_name, N_compounds):
     with open(input_file_name+".inp","r") as file:
         lines = file.read()
         compound_object = re.findall(r"f\ *=\ *[\w\S\ ]* VPfile", lines)
-        #print(compound_object)
         phase_object = re.findall(r"[^w]\d\ *=\ *\{[\d \. \ * e \-]*", lines)
         for i in range(N_compounds):
-            compound_list.append(compound_object[i].split()[2].split("_")[0])
+            comp = re.findall(r"Comp = \S\w*\S", compound_object[i])
+            if comp == []:
+                compound_list.append(compound_object[i].split()[2].split(".")[0].strip("\""))
+            else:
+                compound_list.append(comp[0].split(" ")[-1].strip("\""))
+                
         for j in phase_object:
             if j[1] == "1":
                 for k in j.split():

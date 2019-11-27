@@ -13,7 +13,7 @@ from multiprocessing import Pool, cpu_count
 
 
 def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
-                                    multiprocess = True, delete_files = True, save_output_file = True, forced_convergence = False):
+                                    multiprocess = True, delete_files = True, save_output_file = True, forced_convergence = True):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
     Args: 
@@ -43,7 +43,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     scale_organic = 1  # /0.91/0.8
     R = 8.314*1e-3  # The gas constant in kJ/mol/K
     unit_converter = 1.66  # Converts to mN/m
-    max_iterations = 10  # force converges the while loop after max_iterations
+    max_iterations = 2  # force converges the while loop after max_iterations
     # Coverage
     max_CF = 2
     coverage_dampning = 0.5
@@ -89,7 +89,6 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     phase2 = phase2/np.sum(phase2)
     
     liquid_index, solid_index = get_liquid_index(phase1, phase2, phase_types)
-    print("Liquid index:", liquid_index, "\nSolid index:", solid_index)
     
     # If there is a 0 in phase1, convert it to 10^-16
     if 0 in phase1[liquid_index] and phase_types[0] == "L":

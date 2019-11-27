@@ -7,6 +7,31 @@ from functions import change_input_name
 
 def main():
     
+    phase_types = "WOS"  # Water (O), Oil (O), Solid (S)
+    
+    WS = True  # Water solid, if True run the calculation, if False use specified value
+    WS_IFT = 0.0
+    
+    OS = True  # Oil solid, if True run the calculation, if False use specified value
+    OS_IFT = 0.0
+    
+    WO = True  # Water oil, if True run the calculation, if False use specified value
+    WO_IFT = 0.0
+    
+    
+    
+    with open(input_file+".inp", "r") as file: 
+        text = file.readlines()
+        
+        print(text)
+    
+    # Water phase
+    
+    # Oil phase
+    
+    
+    
+    
     # n-decane
     # IFT_W_S = 64.9449187143066
     # IFT_O_S = -12.500284722858611

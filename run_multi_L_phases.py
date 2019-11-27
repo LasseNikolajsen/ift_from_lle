@@ -66,7 +66,7 @@ def last_line_conc(last_line, conc):
     
 def main():
     initials = "LVND"
-    phase_types = "LLL"
+    phase_types = ""  # Leave empty for only liquid phases
     error_attempts = 2
     
     
@@ -80,31 +80,16 @@ def main():
     
     
     liq_ex = check_units_get_liq_ex(input_file)
-
+    
+    if phase_types == "":
+        for i in range(liq_ex):
+            phase_types += "L"
+    
     phase_types = check_phase_types(phase_types, liq_ex)
     
     if(len(re.findall("[Ll]", phase_types)) != liq_ex):
         print("Warning: Input types did not match phase types of this script, it only uses liquid (L) phases.")
         quit()
-    
-    # with open(input_file_name+".inp", "r") as file:
-        # txt = file.read()
-        # phase_index = re.findall("\w\d=", txt)
-    # for i in range(len(phase_index)):
-        # phase_index[i] = phase_index[i][1]
-    # index1 = phase_index.index("1")
-    # index2 = phase_index.index("2")
-    
-    # phase_types_curr = phase_types[index1]+phase_types[index2]
-
-    # LLE = False
-    # if phase_types_curr == "LL":
-        # LLE = True
-    
-    
-    # if liq_ex != len(phase_types):
-        # print("Warning: Need to define the type of each phase in the calculation.")
-        # quit()
     
 	# Initialize calculated concentration lists
     conc = [[] for _ in range(liq_ex)]
