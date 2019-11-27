@@ -131,6 +131,8 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         coverage = np.sqrt(calculate_coverage(phase1, GtotAB, R, T, liquid_index) * calculate_coverage(phase2, GtotBA, R, T, liquid_index))
     elif phase_types == "LS":
         coverage = calculate_coverage(phase1, GtotAB, R, T, liquid_index)
+    elif phase_types == "SL":
+        coverage = calculate_coverage(phase2, GtotBA, R, T, liquid_index)
     else:
         print("Coverage calculation is wrong")
         quit()
@@ -209,8 +211,15 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             CF[CF<1/max_CF] = 1/max_CF
             # Calculate new coverage
             coverage[liquid_index] = coverage[liquid_index]*CF
-            #coverage[-1] = 0.0
-            #print(coverage[-1])
+            coverage /= np.sum(coverage)
+        elif phase_types == "SCL":
+            coverage_B = calculate_coverage(phase2, GtotBS, R, T, liquid_index)
+            # Calculate coverage factor (CF) and replace the value if it is too high or too low
+            CF = np.power((coverage_B[liquid_index]/coverage[liquid_index]), coverage_dampning)
+            CF[CF>max_CF] = max_CF
+            CF[CF<1/max_CF] = 1/max_CF
+            # Calculate new coverage
+            coverage[liquid_index] = coverage[liquid_index]*CF
             coverage /= np.sum(coverage)
         else:
             print("Something went wrong in the surface coverage calculation.")
