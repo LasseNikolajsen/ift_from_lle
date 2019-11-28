@@ -307,7 +307,7 @@ def get_comp_and_phases(input_file_name, N_compounds):
         compound_object = re.findall(r"f\ *=\ *[\w\S\ ]* VPfile", lines)
         phase_object = re.findall(r"[^w]\d\ *=\ *\{[\d \. \ * e \-]*", lines)
         for i in range(N_compounds):
-            comp = re.findall(r"Comp = \S\w*\S", compound_object[i])
+            comp = re.findall(r"Comp = \S*", compound_object[i])
             if comp == []:
                 compound_list.append(compound_object[i].split()[2].split(".")[0].strip("\""))
             else:

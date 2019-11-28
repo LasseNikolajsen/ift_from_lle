@@ -13,7 +13,7 @@ from multiprocessing import Pool, cpu_count
 
 
 def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
-                                    multiprocess = True, delete_files = True, save_output_file = True, forced_convergence = True):
+                                    multiprocess = True, delete_files = True, save_output_file = True, forced_convergence = False, max_iterations = 5):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
     Args: 
@@ -43,7 +43,6 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     scale_organic = 1  # /0.91/0.8
     R = 8.314*1e-3  # The gas constant in kJ/mol/K
     unit_converter = 1.66  # Converts to mN/m
-    max_iterations = 2  # force converges the while loop after max_iterations
     # Coverage
     max_CF = 2
     coverage_dampning = 0.5
@@ -58,7 +57,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
 
     # Output precision
     np.set_printoptions(formatter={'float': '{: 0.4f}'.format}, suppress = True)
-    float_precision = 6
+    float_precision = 4
 
     # Change input name
     input_file_name, output_path = change_input_name(input_file_name)
@@ -164,7 +163,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     while convergence_flag < convergence_criteria:
         iterations += 1
         
-        if iterations == max_iterations and forced_convergence:
+        if iterations == max_iterations+1 and forced_convergence:
             print("The script ended before convergence!\nPhase 1:  {} \nCoverage: {} \nPhase 2:  {} \nTotal IFT: {}".format(phase1, coverage, phase2, IFT_tot))
             break
         
@@ -246,7 +245,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         else: 
             convergence_flag = 0
         if print_statements:
-            print("Iterations: {0:>2} Coverage: {1} IFT_total: {2:.{3}}".format(str(iterations), coverage, IFT_tot, float_precision))
+            print("Iterations: {0:>2} Coverage: {1} IFT_total: {2:>8.{3}f}".format(str(iterations), coverage, IFT_tot, float_precision))
         
         if debug:
             print("Gtot, AS:", GtotAS, "SA:", GtotSA)
