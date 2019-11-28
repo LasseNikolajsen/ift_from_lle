@@ -52,7 +52,7 @@ def main():
             with open(output+"WS_input.inp", "w") as WS_file:
                 WS_file.writelines(text[:3])
                 for i in range(N_comps):
-                    if i in water_compounds_index+solid_compounds_index:
+                    if i in water_compounds_index+solid_compounds_index:  # It needs to be multiple lines for compounds with multiple conformers
                         WS_file.write(text[3+i])
                 last_line = text[-1]
                 #print(last_line)
