@@ -239,6 +239,10 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         IFT_tot_old = IFT_tot
         IFT_tot = IFT_A_value + IFT_B_value
         
+        if IFT_tot < -95.0:
+            print("Warning: The IFT is out of bounds, the iterative process will end without convergence")
+            break
+        
         # Check convergence criteria
         if abs(IFT_tot_old-IFT_tot) < convergence_threshold:
             convergence_flag += 1

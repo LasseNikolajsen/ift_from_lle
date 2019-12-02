@@ -57,9 +57,9 @@ def main():
     
     phase_types = "WOS"  # Water (O), Oil (O), Solid (S)
     
-    WO_IFT = 0.0  # Water oil, if 0.0 run the calculation, else use specified value
+    WO_IFT = 46.87030111026727  # Water oil, if 0.0 run the calculation, else use specified value
     
-    WS_IFT = 0.0  # Water solid, if 0.0 run the calculation, else use specified value
+    WS_IFT = -50.3  # Water solid, if 0.0 run the calculation, else use specified value
     
     OS_IFT = 0.0  # Oil solid, if 0.0 run the calculation, else use specified value
     
@@ -153,12 +153,13 @@ def main():
     if youngs_eq > 1:
         print("Error: Can not take arccos to a number ouside the range [-1,1]. Please check the calculated energies.")
         print("The calculated number is {}.".format(youngs_eq))
-        quit()
+        contact_angle = "NaN"
     elif youngs_eq < -1:
         youngs_eq = -1
-        
-    contact_angle = np.arccos(youngs_eq) * (180/np.pi)
-    print("\nContact angle [degrees]: {:.4}".format(contact_angle))
+    
+    if not (contact_angle == "NaN"):
+        contact_angle = np.arccos(youngs_eq) * (180/np.pi)
+        print("\nContact angle [degrees]: {:.4}".format(contact_angle))
 
 
     # Create pandas data frame
