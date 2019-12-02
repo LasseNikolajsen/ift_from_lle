@@ -48,7 +48,7 @@ def input_file_to_IFT(phase1, phase2, phase_types, types, input_file, output_pat
                 last_line_modified += " " + last_line[i]
             WS_file.write(last_line_modified)
 
-    IFT, coverage = calculate_IFT_tot_and_coverage(output_path+str(phase_types)+"_input.inp", types, user, save_output_file = False, forced_convergence = False, max_iterations = 2)
+    IFT, coverage = calculate_IFT_tot_and_coverage(output_path+str(phase_types)+"_input.inp", types, user, save_output_file = False)
     return IFT, coverage
 
 def main():
@@ -57,17 +57,22 @@ def main():
     
     phase_types = "WOS"  # Water (O), Oil (O), Solid (S)
     
-    WO_IFT = 46.87030111026727  # Water oil, if 0.0 run the calculation, else use specified value
+    WO_IFT = 0.0  # Water oil, if 0.0 run the calculation, else use specified value
     
-    WS_IFT = -50.3  # Water solid, if 0.0 run the calculation, else use specified value
+    WS_IFT = 0.0  # Water solid, if 0.0 run the calculation, else use specified value
     
     OS_IFT = 0.0  # Oil solid, if 0.0 run the calculation, else use specified value
     
-    if not(WS_IFT != 0.0 and OS_IFT != 0.0 and WO_IFT != 0.0):
+    output = ""
+    
+    try:
         input_file = sys.argv[1]
-        
         input, output = change_input_name(input_file)
-
+    except:
+        input = ""
+    
+    if not(WS_IFT != 0.0 and OS_IFT != 0.0 and WO_IFT != 0.0):
+        
         N_comps, T = get_N_compounds_and_T(input)
         
         comp_list, phases = get_comp_and_phases(input, N_comps)
@@ -150,16 +155,16 @@ def main():
     
     
     youngs_eq = (OS_IFT - WS_IFT) / WO_IFT
+    print(youngs_eq)
     if youngs_eq > 1:
         print("Error: Can not take arccos to a number ouside the range [-1,1]. Please check the calculated energies.")
         print("The calculated number is {}.".format(youngs_eq))
-        contact_angle = "NaN"
+        youngs_eq = 1
     elif youngs_eq < -1:
         youngs_eq = -1
     
-    if not (contact_angle == "NaN"):
-        contact_angle = np.arccos(youngs_eq) * (180/np.pi)
-        print("\nContact angle [degrees]: {:.4}".format(contact_angle))
+    contact_angle = np.arccos(youngs_eq) * (180/np.pi)
+    print("\nContact angle [degrees]: {:.4}".format(contact_angle))
 
 
     # Create pandas data frame
@@ -172,10 +177,11 @@ def main():
         print(df)
         line = "\nContact angle [degrees]: {}".format(contact_angle) + "\nPhase types: {}\n".format(phase_types)
         file.write(line)
-        with open(input+".inp", "r") as input:
-            text = input.read()
-            file.write("\n\n\nInitial input:\n")
-            file.write(text)
+        if not (input == ""):
+            with open(input+".inp", "r") as input:
+                text = input.read()
+                file.write("\n\n\nInitial input:\n")
+                file.write(text)
         if path.exists(output+"WO_input.inp"):
             with open(output+"WO_input.inp", "r") as input:
                 text = input.read()

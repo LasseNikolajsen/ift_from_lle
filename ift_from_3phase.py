@@ -12,8 +12,8 @@ from multiprocessing import Pool, cpu_count
 # Water should be called "h2o" and vacuum should be called "vacuum"
 
 
-def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
-                                    multiprocess = True, delete_files = True, save_output_file = True, forced_convergence = False, max_iterations = 5):
+def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = True, 
+                                    multiprocess = True, delete_files = False, save_output_file = True, forced_convergence = False, max_iterations = 10):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
     Args: 
@@ -38,7 +38,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
 
     # Initial values
 
-    start_ift = 20.
+    start_ift = 10.
     IFT_write_length = 5
     scale_organic = 1  # /0.91/0.8
     R = 8.314*1e-3  # The gas constant in kJ/mol/K
@@ -47,7 +47,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     max_CF = 2
     coverage_dampning = 0.5
     # IFT
-    IFT_max_diff = 20
+    IFT_max_diff = 40
     IFT_dampning = 0.25
     # Convergence
     convergence_criteria = 3
@@ -169,23 +169,23 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         
         # Create flatsurf files
         write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types[:2], max_depth)
-        write_flatsurf_file(input_file_name, "flatsurfBS", phase2, coverage, T, IFT_B_value, IFT_write_length, phase_types[1:], max_depth)
+        write_flatsurf_file(input_file_name, "flatsurfSB", coverage, phase2, T, IFT_B_value, IFT_write_length, phase_types[1:], max_depth)
 
         # Run both COSMOtherm instances simultaneously 
         if multiprocess:
             pool = Pool(processes=N_cpu)
             pool.map(work, [[COSMOtherm_path, os.path.abspath("flatsurfAS.inp")], 
-                            [COSMOtherm_path, os.path.abspath("flatsurfBS.inp")]])
+                            [COSMOtherm_path, os.path.abspath("flatsurfSB.inp")]])
             pool.close()
             pool.join()
 
         else:
             subprocess.call([COSMOtherm_path, "flatsurfAS.inp"]) 
-            subprocess.call([COSMOtherm_path, "flatsurfBS.inp"])  
+            subprocess.call([COSMOtherm_path, "flatsurfSB.inp"])  
         
         # Extract Gtot and Area from the .tab file
         GtotAS, GtotSA, AreaAS, AreaSA = get_Gtot_and_Area("flatsurfAS", N_compounds)
-        GtotBS, GtotSB, AreaBS, AreaSB = get_Gtot_and_Area("flatsurfBS", N_compounds)
+        GtotSB, GtotBS, AreaSB, AreaBS = get_Gtot_and_Area("flatsurfSB", N_compounds)
 
         # Scale areas
         AreaAS, AreaSA = scale_area(compound_list, AreaAS, AreaSA, N_compounds, scale_water, scale_organic)
@@ -237,8 +237,11 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         
         # Calculate total system IFT
         IFT_tot_old = IFT_tot
-        IFT_tot = IFT_A_value + IFT_B_value
-        
+        if phase_types[-1] == "S":
+            IFT_tot = IFT_A_value + IFT_B_value
+        else:
+            IFT_tot = IFT_A_value + IFT_B_value
+            
         if IFT_tot < -95.0:
             print("Warning: The IFT is out of bounds, the iterative process will end without convergence")
             break
@@ -254,19 +257,23 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         if debug:
             print("Gtot, AS:", GtotAS, "SA:", GtotSA)
             print("Area, AS:", AreaAS, "SA:", AreaSA)
-            print("Coverage_A:", coverage_A, "IFT_AS:", "IFT_A:", IFT_A, "IFT_A_value", IFT_A_value)
-            print("Gtot, BS:", GtotBS, "SB:", GtotSB)
-            print("Area, BS:", AreaBS, "SB:", AreaSB)
-            print("Coverage_B:", coverage_B, "IFT_B:", IFT_B, "IFT_B_value", IFT_B_value)
-            print("IFT_tot", IFT_tot)
-            print("Coverage", coverage)
-            print("IFT difference", IFT_tot-IFT_tot_old)
+            if phase_types[0] == "S":
+                print("IFT_A:", IFT_A, "IFT_A_value", IFT_A_value)
+            else:
+                print("Coverage_A:", coverage_A, "IFT_AS:", "IFT_A:", IFT_A, "IFT_A_value", IFT_A_value)
+            print("Gtot, SB:", GtotSB, "BS:", GtotBS)
+            print("Area, SB:", AreaSB, "BS:", AreaBS)
+            if phase_types[2] == "S":
+                print("IFT_B:", IFT_B, "IFT_B_value", IFT_B_value)
+            else:
+                print("Coverage_B:", coverage_B, "IFT_B:", IFT_B, "IFT_B_value", IFT_B_value)
+            print("\n")
         if save_output_file:
             with open(output_path + "output.txt", "a") as file:
                 file.write(", ".join(map(str,coverage))+", {}\n".format(IFT_tot))
     
     if delete_files:
-        files = ["flatsurfAB.inp", "flatsurfAB.out", "flatsurfAB.tab", "flatsurfAS.inp", "flatsurfAS.out", "flatsurfAS.tab", "flatsurfBS.inp", "flatsurfBS.out", "flatsurfBS.tab"]
+        files = ["flatsurfAB.inp", "flatsurfAB.out", "flatsurfAB.tab", "flatsurfAS.inp", "flatsurfAS.out", "flatsurfAS.tab", "flatsurfSB.inp", "flatsurfSB.out", "flatsurfSB.tab"]
         for i in range(len(files)):
             if os.path.exists(files[i]):
                 os.remove(files[i])

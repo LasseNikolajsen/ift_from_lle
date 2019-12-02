@@ -180,7 +180,7 @@ def main():
 
     
 	# Create pandas data frame
-    comp_list, _, _ = get_comp_and_phases(input_file, N_compounds)
+    comp_list, _ = get_comp_and_phases(input_file, N_compounds)
     df = pd.DataFrame(matrix, columns=header, index=comp_list)
 
     

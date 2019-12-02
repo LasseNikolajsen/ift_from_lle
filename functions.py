@@ -344,16 +344,18 @@ def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2,
     """
     max_depth_str = ""
     if phase_types[0] == "S" or phase_types[1] == "S":
-        max_depth_str = "maxdepth="+str(max_depth)
+        max_depth_str = "maxdepth={} ".format(max_depth)
     
     with open(input_file_name+".inp", "r") as file:  # Read the inital input file
         lines = file.readlines()
         # Create output_input_file_name.inp file and write all lines except the last from initial file and write new last line
         with open(output_input_file_name+".inp", "w") as output:    
-            output.writelines(lines[:-1])  # All lines except the last
+            output.writelines(lines[0])
+            output.writelines(max_depth_str+" "+lines[1])
+            output.writelines(lines[2:-1])  # All lines except the last
             # Last line 
-            (output.write("tk={0} FLATSURF xf1={{{1}}} xf2={{{2}}} IGNORE_CHARGE {5} IFT={3:.{4}f} \n".
-            format(T, "  ".join(map(str,phase1)), "  ".join(map(str,phase2)), IFT, IFT_write_length, max_depth_str)))
+            (output.write("tk={0} FLATSURF xf1={{{1}}} xf2={{{2}}} IGNORE_CHARGE IFT={3:.{4}f} \n".
+            format(T, "  ".join(map(str,phase1)), "  ".join(map(str,phase2)), IFT, IFT_write_length)))
     return
     
 
