@@ -12,8 +12,8 @@ from multiprocessing import Pool, cpu_count
 # Water should be called "h2o" and vacuum should be called "vacuum"
 
 
-def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = True, 
-                                    multiprocess = True, delete_files = False, save_output_file = False, forced_convergence = False, max_iterations = 3):
+def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
+                                    multiprocess = True, delete_files = True, save_output_file = False, forced_convergence = False, max_iterations = 3):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
     Args: 
@@ -158,6 +158,8 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         N_cpu = 2
     iterations = 0
     convergence_flag = 0
+    inf_loop_counter = 0
+    IFT_tot_list = []
     if save_output_file:
         open(output_path + "output.txt", "w").close()
     while convergence_flag < convergence_criteria:
@@ -238,9 +240,11 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         # Calculate total system IFT
         IFT_tot_old = IFT_tot
         if phase_types[-1] == "S":
-            IFT_tot = IFT_A_value + IFT_B_value*0.5
+            IFT_tot = IFT_A_value + IFT_B_value
         else:
             IFT_tot = IFT_A_value + IFT_B_value
+            
+        
             
         if IFT_tot < -95.0:
             print("Warning: The IFT is out of bounds, the iterative process will end without convergence")
@@ -253,6 +257,14 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             convergence_flag = 0
         if print_statements:
             print("Iterations: {0:>2} Coverage: {1} IFT_total: {2:>8.{3}f}".format(str(iterations), coverage, IFT_tot, float_precision))
+
+        if IFT_tot in IFT_tot_list:
+            inf_loop_counter += 1
+            if inf_loop_counter > 3:
+                print("Infinite loop detected, increased the effect of IFT_dampning by 2")
+                IFT_dampning *= 0.5
+                inf_loop_counter = 0
+        IFT_tot_list.append(IFT_tot)
         
         if debug:
             print("Gtot, AS:", GtotAS, "SA:", GtotSA)
