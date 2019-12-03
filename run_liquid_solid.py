@@ -57,7 +57,7 @@ def main():
     
     phase_types = "WOS"  # Water (O), Oil (O), Solid (S)
     
-    WO_IFT = 0.0  # Water oil, if 0.0 run the calculation, else use specified value
+    WO_IFT = 46.87031452861058  # Water oil, if 0.0 run the calculation, else use specified value
     
     WS_IFT = 0.0  # Water solid, if 0.0 run the calculation, else use specified value
     
