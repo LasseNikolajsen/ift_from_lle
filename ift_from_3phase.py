@@ -193,6 +193,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         
         # Calculate coverages
         if phase_types == "LCL":
+            #coverage_A, coverage_B = calculate_coverage(phase1, phase2, GtotAS, GtotBS, coverage, R, T, liquid_index, coverage_dampning, max_CF)
             coverage_A = calculate_coverage(phase1, GtotAS, R, T, liquid_index)
             coverage_B = calculate_coverage(phase2, GtotBS, R, T, liquid_index)
             # Calculate coverage factor (CF) and replace the value if it is too high or too low
