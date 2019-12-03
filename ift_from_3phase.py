@@ -28,6 +28,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         delete_files: Delete the intermediate files created during the calculation, boolean, default = True
         save_output_file: Save the direct output of the calculation, boolean, default = True
         forced_convergence: Force the iterative process to end prematurely, boolean, default = False
+        max_iterations: The maximum amount of iterations for the iterative process if forced convergence is set to True, max_iterations should be an integer
         
     Return:
         coverage: The surface coverage between the two input phases as a numpy array
