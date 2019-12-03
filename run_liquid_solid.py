@@ -57,6 +57,8 @@ def main():
     
     phase_types = "WOS"  # Water (O), Oil (O), Solid (S)
     
+    user = "LVND"
+    
     WO_IFT = 46.87031452861058  # Water oil, if 0.0 run the calculation, else use specified value
     
     WS_IFT = 0.0  # Water solid, if 0.0 run the calculation, else use specified value
@@ -127,15 +129,15 @@ def main():
 
             if WO_IFT == 0.0:
                 print("\nCalculating water/oil interface:\n")
-                WO_coverage, WO_IFT = input_file_to_IFT(water_phase, oil_phase, phase_types[water_index]+phase_types[oil_index], "LL", input, output, "LVND", N_comps, 
+                WO_coverage, WO_IFT = input_file_to_IFT(water_phase, oil_phase, phase_types[water_index]+phase_types[oil_index], "LL", input, output, user, N_comps, 
                                                         first_comp_line_index, N_lines_p_compound, water_compounds_index, oil_compounds_index, phases)
             if WS_IFT == 0.0:
                 print("\nCalculating water/solid interface:\n")
-                WS_coverage, WS_IFT = input_file_to_IFT(water_phase, solid_phase, phase_types[water_index]+phase_types[solid_index], "LS", input, output, "LVND", N_comps, 
+                WS_coverage, WS_IFT = input_file_to_IFT(water_phase, solid_phase, phase_types[water_index]+phase_types[solid_index], "LS", input, output, user, N_comps, 
                                                         first_comp_line_index, N_lines_p_compound, water_compounds_index, solid_compounds_index, phases)
             if OS_IFT == 0.0:
                 print("\nCalculating oil/solid interface:\n")
-                OS_coverage, OS_IFT = input_file_to_IFT(oil_phase, solid_phase, phase_types[oil_index]+phase_types[solid_index], "LS", input, output, "LVND", N_comps,
+                OS_coverage, OS_IFT = input_file_to_IFT(oil_phase, solid_phase, phase_types[oil_index]+phase_types[solid_index], "LS", input, output, user, N_comps,
                                                         first_comp_line_index, N_lines_p_compound, oil_compounds_index, solid_compounds_index, phases)
 
     # n-decane
