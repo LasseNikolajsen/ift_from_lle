@@ -104,17 +104,13 @@ def main():
             if solid_phase[i] != 0.0:
                 solid_compounds_index.append(i)
         
-        
         N_lines_p_compound = []   
         count = 0
         first_value = True
         first_comp_line_index = 0
         
-        
         with open(input+".inp", "r") as file: 
             text = file.readlines()
-            
-            
             for i in range(len(text)):
                 if "VPfile" in text[i] or "liq_ex" in text[i]:
                     if first_comp_line_index == 0:
@@ -140,22 +136,7 @@ def main():
                 OS_coverage, OS_IFT = input_file_to_IFT(oil_phase, solid_phase, phase_types[oil_index]+phase_types[solid_index], "LS", input, output, user, N_comps,
                                                         first_comp_line_index, N_lines_p_compound, oil_compounds_index, solid_compounds_index, phases)
 
-    # n-decane
-    # IFT_W_S = 64.9449187143066
-    # IFT_O_S = -12.500284722858611
-    # IFT_O_W = 46.870301105580424
-    
-    # 1-octanol
-    # IFT_W_S = -18.626208743461117
-    # IFT_O_S = 10.935139924034504
-    # IFT_O_W = 46.870301105580424
-
-    # acetic acid
-    # IFT_W_S = -14.774634533876746
-    # IFT_O_S = 9.751316977037327
-    # IFT_O_W = 46.870301105580424
-    
-    
+                                                        
     youngs_eq = (OS_IFT - WS_IFT) / WO_IFT
     print(youngs_eq)
     if youngs_eq > 1:
