@@ -4,6 +4,7 @@ import sys
 import os
 import numpy as np
 import re
+import decimal
 from functions import *
 from multiprocessing import Pool, cpu_count
 
@@ -12,7 +13,7 @@ from multiprocessing import Pool, cpu_count
 # Water should be called "h2o" and vacuum should be called "vacuum"
 
 
-def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
+def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = True, 
                                     multiprocess = True, delete_files = True, save_output_file = False, forced_convergence = False, max_iterations = 3):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
@@ -52,6 +53,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     # Convergence
     convergence_criteria = 3  # Number of iterations with an IFT difference under convergence_threshold
     convergence_threshold = 1e-3
+    inf_loop_precision = 3  # The precision for the infinite loop check, high number equals less likely to occur
     # Solids
     max_depth = 2.0  # max depth in Angstrom for the flatsurf calculations including a solid phase 
 
@@ -236,7 +238,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         # Calculate total system IFT
         IFT_tot_old = IFT_tot
         if phase_types[-1] == "S":
-            IFT_tot = IFT_A_value + IFT_B_value
+            IFT_tot = IFT_A_value + IFT_B_value * 0.5
         else:
             IFT_tot = IFT_A_value + IFT_B_value
             
@@ -256,13 +258,13 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             print("Iterations: {0:>2} Coverage: {1} IFT_total: {2:>8.{3}f}".format(str(iterations), coverage, IFT_tot, float_precision))
 
         # Check for infinite loop
-        if IFT_tot in IFT_tot_list:
+        if "{:.{}f}".format(IFT_tot, inf_loop_precision) in IFT_tot_list:
             inf_loop_counter += 1
             if inf_loop_counter > 3:
                 print("Infinite loop detected, increased the effect of IFT_dampning by 2")
                 IFT_dampning *= 0.5
                 inf_loop_counter = 0
-        IFT_tot_list.append(IFT_tot)
+        IFT_tot_list.append("{:.{}f}".format(IFT_tot, inf_loop_precision))
         
         if debug:
             print("Gtot, AS:", GtotAS, "SA:", GtotSA)
