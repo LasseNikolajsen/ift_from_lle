@@ -4,7 +4,7 @@ import os
 import numpy as np
 import re
 
-# This document includes all the functions called in the IFT calculation script and some called in the run_phases support script
+# This document includes all the functions called in the IFT calculation script and some called in the run_multi_L_phases support script
 
 def get_liquid_index(phase1, phase2, phase_types):
     """ Get the indecies where the compounds are above 0.0 in the liquid phase
@@ -459,7 +459,7 @@ def calculate_IFT(bulk_phase, Gtot_bulk_surface, Gtot_surface_bulk, area_bulk_su
         R: The gas constant in kj/mol/K as a float
         T: The temperature in Kelvin as a float
         unit_converter: Converts the output to mN/m as a float
-        phase_types: Type of phases (Liquid L, Gas, G, Solid S, Coverge C) as a string
+        phase_types: Type of phases (Liquid L, Gas G, Solid S, Coverage C) as a string
         
     Return:
         IFT: The sum of all interfacial tensions between phase and surface as a float

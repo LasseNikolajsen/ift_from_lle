@@ -4,7 +4,6 @@ import sys
 import os
 import numpy as np
 import re
-import decimal
 from functions import *
 from multiprocessing import Pool, cpu_count
 
@@ -18,10 +17,8 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
     Args: 
-        input_file_name: The name of the input file that the code should run either without extension, 
-                         with extension or a path, as a string 
-        phase_types: Input phase types of IFT calculation one char for each phase
-                     as a string (L for liquid, G for gas, S for solid)
+        input_file_name: The name of the input file that the code should run either without extension, with extension or a path, as a string 
+        phase_types: Input phase types of IFT calculation one char for each phase as a string (L for liquid, G for gas, S for solid)
         user: The user initials in caps as a string
         print_statements: Print information from each iteration, boolean, default = True
         debug: Print additional information from each COSMOtherm calculation, boolean, default = False
@@ -46,10 +43,10 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     unit_converter = 1.66  # Converts to mN/m
     # Coverage
     max_CF = 2  # Limits the step length of coverage per iteration to twice the current concentration
-    coverage_dampning = 0.5  # Prevents oscillations
+    coverage_damping = 0.5  # Prevents oscillations
     # IFT
     IFT_max_diff = 40  # Limits the step length of IFT per iteration
-    IFT_dampning = 0.25  # Prevents oscillations
+    IFT_damping = 0.25  # Prevents oscillations
     # Convergence
     convergence_criteria = 3  # Number of iterations with an IFT difference under convergence_threshold
     convergence_threshold = 1e-3
@@ -176,8 +173,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
 
         if multiprocess:  # Run both COSMOtherm instances simultaneously
             pool = Pool(processes=N_cpu)
-            pool.map(work, [[COSMOtherm_path, os.path.abspath("flatsurfAS.inp")], 
-                            [COSMOtherm_path, os.path.abspath("flatsurfSB.inp")]])
+            pool.map(work, [[COSMOtherm_path, os.path.abspath("flatsurfAS.inp")], [COSMOtherm_path, os.path.abspath("flatsurfSB.inp")]])
             pool.close()
             pool.join()
 
@@ -195,11 +191,11 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         
         # Calculate coverages
         if phase_types == "LCL":
-            #coverage_A, coverage_B = calculate_coverage(phase1, phase2, GtotAS, GtotBS, coverage, R, T, liquid_index, coverage_dampning, max_CF)
+            #coverage_A, coverage_B = calculate_coverage(phase1, phase2, GtotAS, GtotBS, coverage, R, T, liquid_index, coverage_damping, max_CF)
             coverage_A = calculate_coverage(phase1, GtotAS, R, T, liquid_index)
             coverage_B = calculate_coverage(phase2, GtotBS, R, T, liquid_index)
             # Calculate coverage factor (CF) and replace the value if it is too high or too low
-            CF = np.power((coverage_A*coverage_B/coverage**2), coverage_dampning)
+            CF = np.power((coverage_A*coverage_B/coverage**2), coverage_damping)
             CF[CF>max_CF] = max_CF
             CF[CF<1/max_CF] = 1/max_CF
             # Calculate new coverage
@@ -208,7 +204,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         elif phase_types == "LCS":
             coverage_A = calculate_coverage(phase1, GtotAS, R, T, liquid_index)
             # Calculate coverage factor (CF) and replace the value if it is too high or too low
-            CF = np.power((coverage_A[liquid_index]/coverage[liquid_index]), coverage_dampning)
+            CF = np.power((coverage_A[liquid_index]/coverage[liquid_index]), coverage_damping)
             CF[CF>max_CF] = max_CF
             CF[CF<1/max_CF] = 1/max_CF
             # Calculate new coverage
@@ -217,7 +213,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         elif phase_types == "SCL":
             coverage_B = calculate_coverage(phase2, GtotBS, R, T, liquid_index)
             # Calculate coverage factor (CF) and replace the value if it is too high or too low
-            CF = np.power((coverage_B[liquid_index]/coverage[liquid_index]), coverage_dampning)
+            CF = np.power((coverage_B[liquid_index]/coverage[liquid_index]), coverage_damping)
             CF[CF>max_CF] = max_CF
             CF[CF<1/max_CF] = 1/max_CF
             # Calculate new coverage
@@ -232,8 +228,8 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         IFT_B = calculate_IFT(phase2, GtotBS, GtotSB, AreaBS, AreaSB, coverage, R, T, unit_converter, phase_types[1:], liquid_index)
         
         # Damping IFT
-        IFT_A_value = calculate_IFT_dampning(IFT_A, IFT_A_value, IFT_max_diff, IFT_dampning)
-        IFT_B_value = calculate_IFT_dampning(IFT_B, IFT_B_value, IFT_max_diff, IFT_dampning)
+        IFT_A_value = calculate_IFT_damping(IFT_A, IFT_A_value, IFT_max_diff, IFT_damping)
+        IFT_B_value = calculate_IFT_damping(IFT_B, IFT_B_value, IFT_max_diff, IFT_damping)
         
         # Calculate total system IFT
         IFT_tot_old = IFT_tot
@@ -261,8 +257,9 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         if "{:.{}f}".format(IFT_tot, inf_loop_precision) in IFT_tot_list:
             inf_loop_counter += 1
             if inf_loop_counter > 3:
-                print("Infinite loop detected, increased the effect of IFT_dampning by 2")
-                IFT_dampning *= 0.5
+                IFT_damping_new = IFT_damping * 0.5
+                print("Infinite loop detected, changed the IFT_damping from {} to {}".format(IFT_damping, IFT_damping_new))
+                IFT_damping = IFT_damping_new
                 inf_loop_counter = 0
         IFT_tot_list.append("{:.{}f}".format(IFT_tot, inf_loop_precision))
         
