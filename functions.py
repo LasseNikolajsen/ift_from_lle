@@ -445,6 +445,34 @@ def calculate_coverage(phase, Gtot, R, T, liquid_index):
     return coverage 
     
     
+def calculate_CF(coverage, coverage_new, coverage_damping, max_CF, liquid_index):
+    """ Calculate coverage factor (CF) and replace the value if it is too high or too low
+    
+    Args:
+        coverage: Coverage as an array
+        coverage_new: Coverage A and/or Coverage B, if multiple coverages, input as a list of arrays otherwise input as a single array
+        coverage_damping: The coverage damping
+        max_CF: The maximum allowed step length for the coverage per iteration
+        liquid_index: The index for the liquid phase, if a solid phase is present
+        
+    Return:
+        coverage: Surface coverage as an array
+    """
+    if type(coverage_new) == list:
+        CF = np.power((coverage_new[0][liquid_index]*coverage_new[1][liquid_index]/coverage[liquid_index]**2), coverage_damping)
+        CF[CF>max_CF] = max_CF
+        CF[CF<1/max_CF] = 1/max_CF
+        coverage[liquid_index] = coverage[liquid_index]*CF
+        coverage /= np.sum(coverage)
+    else:
+        CF = np.power((coverage_new[liquid_index]/coverage[liquid_index]), coverage_damping)
+        CF[CF>max_CF] = max_CF
+        CF[CF<1/max_CF] = 1/max_CF
+        coverage[liquid_index] = coverage[liquid_index]*CF
+        coverage /= np.sum(coverage)
+    return coverage 
+    
+    
 def calculate_IFT(bulk_phase, Gtot_bulk_surface, Gtot_surface_bulk, area_bulk_surface, area_surface_bulk, 
                   coverage, R, T, unit_converter, phase_types, liquid_index):
     """ Calculate IFT between two phases for either Liquid (L), Gas (G) or Solid (S)
@@ -478,14 +506,14 @@ def calculate_IFT(bulk_phase, Gtot_bulk_surface, Gtot_surface_bulk, area_bulk_su
     return IFT
 
     
-def calculate_IFT_dampning(IFT, IFT_value, IFT_max_diff, IFT_dampning):
+def calculate_IFT_damping(IFT, IFT_value, IFT_max_diff, IFT_damping):
     """ Calculate IFT direction and dampen the value
     
     Args:
         IFT: As calculated by calculate_IFT as a float
         IFT_value: IFT_value as a float
         IFT_max_diff: The maximum difference i.e. step size as a float or integer
-        IFT_dampning: The dampning effect as a float
+        IFT_damping: The damping effect as a float
     
     Return:
         IFT_value with 6 decimals, truncated to prevent memory error in COSMOthermX18
@@ -497,5 +525,5 @@ def calculate_IFT_dampning(IFT, IFT_value, IFT_max_diff, IFT_dampning):
     else:
         difference = IFT-IFT_value
     
-    IFT_value = IFT_value+difference*IFT_dampning
+    IFT_value = IFT_value+difference*IFT_damping
     return IFT_value
