@@ -12,8 +12,8 @@ from multiprocessing import Pool, cpu_count
 # Water should be called "h2o" and vacuum should be called "vacuum"
 
 
-def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
-                                    multiprocess = True, delete_files = True, save_output_file = False, forced_convergence = False, max_iterations = 3):
+def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = True, 
+                                    multiprocess = True, delete_files = True, save_output_file = True, forced_convergence = False, max_iterations = 3):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
     Args: 
@@ -212,7 +212,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         # Calculate total system IFT
         IFT_tot_old = IFT_tot
         if phase_types[-1] == "S":
-            IFT_tot = IFT_A_value + IFT_B_value
+            IFT_tot = IFT_A_value + IFT_B_value * 0.5
         else:
             IFT_tot = IFT_A_value + IFT_B_value
             
