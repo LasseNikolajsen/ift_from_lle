@@ -176,11 +176,13 @@ def check_parameterization(input_file_name):
         1/0.26697*0.43061, 1/0.2641*0.43061, 1, 1/0.31733*0.43061, 1/0.28649*0.43061, 
         "add_parameterization_here"]
     with open(input_file_name+".inp","r") as file:
-        lines = file.readlines()
-        try:
-            index = parameter.index(lines[0].split()[2].split(".")[0])
+        text = file.read()
+        para_obj = re.findall("ctd\ *=\ *\w*", text)
+        para = para_obj[0].split()[2]
+        if para in parameter:
+            index = parameter.index(para)
             scale_water = parameterization[index]
-        except:
+        else:
             print("Warning: No matching parameterization found.\
             \nGo to check_parameterization to add new parameterizations.")
             quit()
@@ -215,7 +217,7 @@ def check_phase_types(types, N_phases):
         else:
             continue
 
-    # Format the input for future implementation
+    # Format the input for future use
     types_formated = ""
     for i in types:
         if re.findall("[Ll]", i) != []:
@@ -241,11 +243,12 @@ def get_N_compounds_and_T(input_file_name):
         N_compounds: Number of compounds as a float
         T: Temperature as floats
     """
+    # Implement Fahrenheit
     with open(input_file_name+".inp","r") as file:
         text = file.read()
         
-        obj_T = re.findall(r"t[ck]=[0-9]+\.*[0-9]*", text)  # Find tc= or tk=
-        T_list = obj_T[0].split("=")
+        T_obj = re.findall(r"t[ck]=[0-9]+\.*[0-9]*", text)  # Find tc= or tk=
+        T_list = T_obj[0].split("=")
         if T_list[0] == 'tc':
             T = float(T_list[1])+273.15
         else:
@@ -269,6 +272,7 @@ def get_comp_and_phases_for_LL(input_file_name, N_compounds):
         phase1: Phase 1 as a np.array of floats
         phase2: Phase 2 as a np.array of floats
     """
+    # Use Re? Return phases as a list and combine the two functions
     compound_list = []
     phase1 = []
     phase2 = []
@@ -337,7 +341,7 @@ def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2,
         phase2: Second phase as a list
         T: Temperature as a float
         IFT: IFT as a float
-        phase_types: Type of phases (Liquid L, Gas, G, Solid S) as a string
+        phase_types: Type of phases (Liquid L, Gas, G, Solid S) as a string with length 2
     
     Return:
         None
@@ -382,8 +386,8 @@ def get_Gtot_and_Area(input_file_name, N_compounds):
             # find a line of numbers with more than 4 numbers
             obj_ABtab = re.findall(r"(?:[-+]?\d*\.\d*\s*){4,}", text)  
             # There is 2 times the N_compounds lines in obj_ABtab.
-            # The first N_compounds lines are from one side, the rest are
-            # from the other. Gtot is the index 1 and across,mean is index 2.
+            # The first N_compounds lines are from one side, the rest are from the other. 
+            # Gtot is index 1 and across,mean is index 2.
             GtotAB.append(float(obj_ABtab[i].split()[1]))
             GtotBA.append(float(obj_ABtab[i+N_compounds].split()[1]))
             AreaAB.append(float(obj_ABtab[i].split()[2]))
@@ -411,10 +415,10 @@ def scale_area(compound_list, AreaAB, AreaBA, N_compounds, scale_water, scale_or
         AreaBA: Scaled area from the other side as a list of floats
     """
     for i in range(N_compounds):
-        if (compound_list[i]=='h2o'):  # Scale water
+        if "h2o" in compound_list[i]:  # Scale water
             AreaAB[i]*=scale_water;
             AreaBA[i]*=scale_water;
-        elif (compound_list[i]=='vacuum'):  # Scale vacuum
+        elif "vacuum" in compound_list[i]:  # Scale vacuum
             AreaAB[i]=1e1000
             AreaBA[i]=1e1000
         else:
@@ -502,7 +506,7 @@ def calculate_IFT(bulk_phase, Gtot_bulk_surface, Gtot_surface_bulk, area_bulk_su
         IFT = np.sum((coverage_part + phase_part)/(2*area_bulk_surface)*unit_converter)
     elif phase_types[0] == "S" or phase_types[1] == "S":
         phase_part = coverage*Gtot_surface_bulk
-        IFT = np.sum(phase_part/(area_surface_bulk)*unit_converter)
+        IFT = np.sum(phase_part/(2*area_surface_bulk)*unit_converter)
     return IFT
 
     

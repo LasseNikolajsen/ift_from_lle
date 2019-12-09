@@ -10,6 +10,8 @@ def calculate_IFT_tot(input_file_name, user):
     
     print_statements = True
     save_output_file = True
+    forced_convergence = False
+    max_iterations = 3
     
     phase_types = "CS"
     
@@ -79,6 +81,11 @@ def calculate_IFT_tot(input_file_name, user):
         open(output_path + "output.txt", "w").close()
     while convergence_flag < convergence_criteria:
         iterations += 1
+    
+        # Check for forced convergence
+        if iterations == max_iterations+1 and forced_convergence:
+            print("The script ended before convergence!\nCoverage: {} \nPhase 2:  {} \nTotal IFT: {}".format(coverage, phase2, IFT_tot))
+            break
     
         write_flatsurf_file(input_file_name, "flatsurf_C_2", coverage, phase2, T, IFT_B_value, IFT_write_length, phase_types, max_depth)
         subprocess.call([COSMOtherm_path, "flatsurf_C_2.inp"]) 

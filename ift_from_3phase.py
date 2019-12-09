@@ -212,7 +212,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         # Calculate total system IFT
         IFT_tot_old = IFT_tot
         if phase_types[-1] == "S":
-            IFT_tot = IFT_A_value + IFT_B_value * 0.5
+            IFT_tot = IFT_A_value + IFT_B_value
         else:
             IFT_tot = IFT_A_value + IFT_B_value
             
