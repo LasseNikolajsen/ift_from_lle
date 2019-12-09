@@ -247,10 +247,12 @@ def get_N_compounds_and_T(input_file_name):
     with open(input_file_name+".inp","r") as file:
         text = file.read()
         
-        T_obj = re.findall(r"t[ck]=[0-9]+\.*[0-9]*", text)  # Find tc= or tk=
+        T_obj = re.findall(r"t[ckF]=[0-9]+\.*[0-9]*", text)  # Find tc=, tk= or tF=
         T_list = T_obj[0].split("=")
-        if T_list[0] == 'tc':
-            T = float(T_list[1])+273.15
+        if T_list[0] == "tc":
+            T = float(T_list[1])+273.15  # From Celsius to Kelvin
+        elif T_list[0] == "tF":
+            T = (float(T_list[1])-32)*(5/9) + 273.15  # From Fahrenheit to Kelvin
         else:
             T = float(T_list[1]) 
 
