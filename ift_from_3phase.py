@@ -38,14 +38,14 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     # Initial values
     start_ift = 10.  # Start_ift * 2 is the start position in the iterative process
     IFT_write_length = 5  # Decimals when writing IFT in the flatsurf files, more than 5 triggers an error
-    scale_organic = 1  # /0.91/0.8
+    scale_organic = 1.  # /0.91/0.8
     R = 8.314*1e-3  # The gas constant in kJ/mol/K
     unit_converter = 1.66  # Converts to mN/m
     # Coverage
-    max_CF = 2  # Limits the step length of coverage per iteration to twice the current concentration
+    max_CF = 2.  # Limits the step length of coverage per iteration to twice the current concentration
     coverage_damping = 0.5  # Prevents oscillations
     # IFT
-    IFT_max_diff = 40  # Limits the step length of IFT per iteration
+    IFT_max_diff = 40.  # Limits the step length of IFT per iteration
     IFT_damping = 0.25  # Prevents oscillations
     # Convergence
     convergence_criteria = 3  # Number of iterations with an IFT difference under convergence_threshold

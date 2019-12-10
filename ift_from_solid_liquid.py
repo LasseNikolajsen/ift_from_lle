@@ -93,6 +93,8 @@ def calculate_IFT_tot(input_file_name, user):
         Gtot_C_2, Gtot_2_C, Area_C_2, Area_2_C = get_Gtot_and_Area("flatsurf_C_2", N_compounds)
         Area_C_2, Area_2_C = scale_area(compound_list, Area_C_2, Area_2_C, N_compounds, scale_water, scale_organic)
         
+        print("Gtot C->2:", Gtot_C_2, "Gtot 2->C:", Gtot_2_C)
+        
         IFT_B = calculate_IFT(phase2, Gtot_2_C, Gtot_C_2, Area_2_C, Area_C_2, coverage, R, T, unit_converter, phase_types, liquid_index)
         
         IFT_B_value = calculate_IFT_damping(IFT_B, IFT_B_value, IFT_max_diff, IFT_damping)
