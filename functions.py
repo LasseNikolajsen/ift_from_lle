@@ -173,7 +173,7 @@ def check_parameterization(input_file_name):
         "BP_TZVP_C21_0111", "DMOL3_PBE_C30_1301", "BP_TZVPD_FINE_C30_1501", "BP_TZVPD_FINE_C30_1401", 
         "BP_TZVPD_FINE_C30_1301", "add_parameter_here"]
     parameterization = [1/0.625, 1/0.25475*0.43061, 1/0.26753*0.43061, 1/0.25*0.43061,
-        1/0.26697*0.43061, 1/0.2641*0.43061, 1, 1/0.31733*0.43061, 1/0.28649*0.43061, 
+        1/0.26697*0.43061, 1/0.2641*0.43061, 1.0, 1/0.31733*0.43061, 1/0.28649*0.43061, 
         "add_parameterization_here"]
     with open(input_file_name+".inp","r") as file:
         text = file.read()

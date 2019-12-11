@@ -28,7 +28,7 @@ def calculate_IFT_tot(input_file_name, user):
     convergence_threshold = 1e-3
     inf_loop_precision = 3  # The precision for the infinite loop check, high number equals less likely to occur
     # Solids
-    max_depth = 2.0  # max depth in Angstrom for the flatsurf calculations including a solid phase 
+    max_depth = 1.0  # max depth in Angstrom for the flatsurf calculations including a solid phase 
 
     # Output precision
     np.set_printoptions(formatter={'float': '{: 0.4f}'.format}, suppress = True)
@@ -95,12 +95,15 @@ def calculate_IFT_tot(input_file_name, user):
         
         print("Gtot C->2:", Gtot_C_2, "Gtot 2->C:", Gtot_2_C)
         
-        IFT_B = calculate_IFT(phase2, Gtot_2_C, Gtot_C_2, Area_2_C, Area_C_2, coverage, R, T, unit_converter, phase_types, liquid_index)
+        #IFT_B = calculate_IFT(phase2, Gtot_2_C, Gtot_C_2, Area_2_C, Area_C_2, coverage, R, T, unit_converter, phase_types, liquid_index)
+        phase_part = 0.5*coverage*Gtot_C_2
+        IFT_B = np.sum(phase_part/(Area_C_2)*unit_converter)
+        
         
         IFT_B_value = calculate_IFT_damping(IFT_B, IFT_B_value, IFT_max_diff, IFT_damping)
         
         IFT_tot_old = IFT_tot
-        IFT_tot = IFT_B_value * 0.5
+        IFT_tot = IFT_B_value
         
         # Check for out of bounds total IFT to prevent COSMOtherm error
         if IFT_tot < -95.0 or IFT_tot > 120.0:

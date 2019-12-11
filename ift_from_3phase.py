@@ -36,7 +36,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     COSMOtherm_path = get_user_and_path(user)
 
     # Initial values
-    start_ift = 10.  # Start_ift * 2 is the start position in the iterative process
+    start_ift = 20.  # Start_ift * 2 is the start position in the iterative process
     IFT_write_length = 5  # Decimals when writing IFT in the flatsurf files, more than 5 triggers an error
     scale_organic = 1.  # /0.91/0.8
     R = 8.314*1e-3  # The gas constant in kJ/mol/K
@@ -52,7 +52,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     convergence_threshold = 1e-3
     inf_loop_precision = 3  # The precision for the infinite loop check, high number equals less likely to occur
     # Solids
-    max_depth = 2.0  # max depth in Angstrom for the flatsurf calculations including a solid phase 
+    max_depth = 1.0  # max depth in Angstrom for the flatsurf calculations including a solid phase 
 
     # Output precision
     np.set_printoptions(formatter={'float': '{: 0.4f}'.format}, suppress = True)
