@@ -28,7 +28,7 @@ def calculate_IFT_tot(input_file_name, user):
     convergence_threshold = 1e-3
     inf_loop_precision = 3  # The precision for the infinite loop check, high number equals less likely to occur
     # Solids
-    max_depth = 1.0  # max depth in Angstrom for the flatsurf calculations including a solid phase 
+    max_depth = 3.0  # max depth in Angstrom for the flatsurf calculations including a solid phase 
 
     # Output precision
     np.set_printoptions(formatter={'float': '{: 0.4f}'.format}, suppress = True)
