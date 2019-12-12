@@ -52,7 +52,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     convergence_threshold = 1e-3
     inf_loop_precision = 3  # The precision for the infinite loop check, high number equals less likely to occur
     # Solids
-    max_depth = 1.0  # max depth in Angstrom for the flatsurf calculations including a solid phase 
+    max_depth = 2.0  # max depth in Angstrom for the flatsurf calculations including a solid phase 
 
     # Output precision
     np.set_printoptions(formatter={'float': '{: 0.4f}'.format}, suppress = True)
@@ -159,6 +159,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     # Open output file
     if save_output_file:
         open(output_path + "output.txt", "w").close()
+    open(output_path + "Gtot_area.txt", "w").close()
     while convergence_flag < convergence_criteria:
         iterations += 1
         
@@ -200,7 +201,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         elif phase_types == "SCL":
             coverage_B = calculate_coverage(phase2, GtotBS, R, T, liquid_index)
             coverage = calculate_CF(coverage, coverage_B, coverage_damping, max_CF, liquid_index)
-
+            
         # Calculate IFT between phase and surface
         IFT_A = calculate_IFT(phase1, GtotAS, GtotSA, AreaAS, AreaSA, coverage, R, T, unit_converter, phase_types[:2], liquid_index)
         IFT_B = calculate_IFT(phase2, GtotBS, GtotSB, AreaBS, AreaSB, coverage, R, T, unit_converter, phase_types[1:], liquid_index)
@@ -215,6 +216,10 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             IFT_tot = IFT_A_value + IFT_B_value
         else:
             IFT_tot = IFT_A_value + IFT_B_value
+            
+            
+        with open(output_path + "Gtot_area.txt", "a") as output:
+            output.write("{}, {}, {}\n".format(GtotSB[0], AreaSB[0], IFT_tot))
             
         # Check for out of bounds total IFT to prevent COSMOtherm error
         if IFT_tot < -95.0:
