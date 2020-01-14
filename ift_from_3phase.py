@@ -12,8 +12,8 @@ from multiprocessing import Pool, cpu_count
 # Water should be called "h2o" and vacuum should be called "vacuum"
 
 
-def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, 
-                                    multiprocess = True, delete_files = True, save_output_file = True, forced_convergence = False, max_iterations = 3):
+def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, multiprocess = True, delete_files = True, 
+                                   save_output_file = True, forced_convergence = False, max_iterations = 3, max_depth = 3.0, solid_scaling = 0.5, gas_scaling = 0.5):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
     Args: 
@@ -27,6 +27,9 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         save_output_file: Save the direct output of the calculation, boolean, default = True
         forced_convergence: Force the iterative process to end prematurely, boolean, default = False
         max_iterations: The maximum amount of iterations for the iterative process if forced convergence is set to True, max_iterations is an integer
+        max_depth: The depth in Angstrom allowed in the solid-liquid calculation, default = 3.0
+        solid_scaling: The amount of Gtot used in the IFT calculation for solids, default = 0.5
+        gas_scaling: The amount of Gtot used in the IFT calculation for gases, default = 0.5        
         
     Return:
         coverage: The surface coverage between the two input phases as a numpy array
@@ -51,8 +54,6 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     convergence_criteria = 3  # Number of iterations with an IFT difference under convergence_threshold
     convergence_threshold = 1e-3
     inf_loop_precision = 3  # The precision for the infinite loop check, high number equals less likely to occur
-    # Solids
-    max_depth = 2.0  # max depth in Angstrom for the flatsurf calculations including a solid phase 
 
     # Output precision
     np.set_printoptions(formatter={'float': '{: 0.4f}'.format}, suppress = True)
@@ -76,7 +77,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     # Check phase types
     phase_types = check_phase_types(phase_types, 2)
 
-    # Get the composition of the two phases from the .tab file for LL after LLE or from the .inp file for everything els    
+    # Get the composition of the two phases from the .tab file for LL after LLE or from the .inp file for everything else    
     if phase_types == "LL":
         subprocess.call([COSMOtherm_path, input_file_name+".inp"])
         compound_list, phase1, phase2 = get_comp_and_phases_for_LL(input_file_name, N_compounds)
@@ -86,7 +87,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         phase2 = phases[1]
         
     # Get the indices of the liquid and solid compounds
-    liquid_index, solid_index = get_liquid_index(phase1, phase2, phase_types)
+    liquid_index, solid_gas_index = get_liquid_index(phase1, phase2, phase_types)
     
     # If there is a 0 in the phase, convert it to 10^-16
     if 0 in phase1[liquid_index] and phase_types[0] == "L":
@@ -129,9 +130,9 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     # Calculate the coverage in the interface between A and B, using equation 1 for LL and a reduced equation for LS and SL
     if phase_types == "LL":
         coverage = np.sqrt(calculate_coverage(phase1, GtotAB, R, T, liquid_index) * calculate_coverage(phase2, GtotBA, R, T, liquid_index))
-    elif phase_types == "LS":
+    elif phase_types == "LS" or phase_types == "LG":
         coverage = calculate_coverage(phase1, GtotAB, R, T, liquid_index)
-    elif phase_types == "SL":
+    elif phase_types == "SL" or phase_types == "GL":
         coverage = calculate_coverage(phase2, GtotBA, R, T, liquid_index)
     
     # If there is a 0 in the coverage, convert it to 10^-16
@@ -159,7 +160,6 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     # Open output file
     if save_output_file:
         open(output_path + "output.txt", "w").close()
-    open(output_path + "Gtot_area.txt", "w").close()
     while convergence_flag < convergence_criteria:
         iterations += 1
         
@@ -195,16 +195,16 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             coverage_A = calculate_coverage(phase1, GtotAS, R, T, liquid_index)
             coverage_B = calculate_coverage(phase2, GtotBS, R, T, liquid_index)
             coverage = calculate_CF(coverage, [coverage_A, coverage_B], coverage_damping, max_CF, liquid_index)
-        elif phase_types == "LCS":
+        elif phase_types == "LCS" or phase_types == "LCG":
             coverage_A = calculate_coverage(phase1, GtotAS, R, T, liquid_index)
             coverage = calculate_CF(coverage, coverage_A, coverage_damping, max_CF, liquid_index)
-        elif phase_types == "SCL":
+        elif phase_types == "SCL" or phase_types == "GCL":
             coverage_B = calculate_coverage(phase2, GtotBS, R, T, liquid_index)
             coverage = calculate_CF(coverage, coverage_B, coverage_damping, max_CF, liquid_index)
             
         # Calculate IFT between phase and surface
-        IFT_A = calculate_IFT(phase1, GtotAS, GtotSA, AreaAS, AreaSA, coverage, R, T, unit_converter, phase_types[:2], liquid_index)
-        IFT_B = calculate_IFT(phase2, GtotBS, GtotSB, AreaBS, AreaSB, coverage, R, T, unit_converter, phase_types[1:], liquid_index)
+        IFT_A = calculate_IFT(phase1, GtotAS, GtotSA, AreaAS, AreaSA, coverage, R, T, unit_converter, phase_types[:2], liquid_index, solid_scaling, gas_scaling)
+        IFT_B = calculate_IFT(phase2, GtotBS, GtotSB, AreaBS, AreaSB, coverage, R, T, unit_converter, phase_types[1:], liquid_index, solid_scaling, gas_scaling)
         
         # Damping IFT
         IFT_A_value = calculate_IFT_damping(IFT_A, IFT_A_value, IFT_max_diff, IFT_damping)
@@ -213,9 +213,6 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         # Calculate total system IFT
         IFT_tot_old = IFT_tot
         IFT_tot = IFT_A_value + IFT_B_value
-        
-        with open(output_path + "Gtot_area.txt", "a") as output:
-            output.write("{}, {}, {}\n".format(GtotSB[0], AreaSB[0], IFT_tot))
             
         # Check for out of bounds total IFT to prevent COSMOtherm error
         if IFT_tot < -95.0:

@@ -25,13 +25,13 @@ def get_liquid_index(phase1, phase2, phase_types):
         for i in range(len(phase1)):
             liquid_index.append(i)
     
-    elif phase_types == "SL":
+    elif phase_types == "SL" or phase_types == "GL":
         for i in range(len(phase1)):
             if phase1[i] > 0.0:
                 solid_index.append(i)
             else:
                 liquid_index.append(i)
-    elif phase_types == "LS":
+    elif phase_types == "LS" or phase_types == "LG":
         for i in range(len(phase2)):
             if phase2[i] > 0.0:
                 solid_index.append(i)
@@ -480,7 +480,7 @@ def calculate_CF(coverage, coverage_new, coverage_damping, max_CF, liquid_index)
     
     
 def calculate_IFT(bulk_phase, Gtot_bulk_surface, Gtot_surface_bulk, area_bulk_surface, area_surface_bulk, 
-                  coverage, R, T, unit_converter, phase_types, liquid_index):
+                  coverage, R, T, unit_converter, phase_types, liquid_index, solid_scaling, gas_scaling):
     """ Calculate IFT between two phases for either Liquid (L), Gas (G) or Solid (S)
     
     Args:
@@ -503,11 +503,10 @@ def calculate_IFT(bulk_phase, Gtot_bulk_surface, Gtot_surface_bulk, area_bulk_su
         phase_part = bulk_phase[liquid_index]*Gtot_bulk_surface[liquid_index]
         IFT = np.sum((coverage_part + phase_part)/(2*area_bulk_surface[liquid_index])*unit_converter)
     elif phase_types[0] == "G" or phase_types[1] == "G":
-        coverage_part = coverage*(Gtot_bulk_surface-R*T*np.log(bulk_phase)+R*T*np.log(coverage))
-        phase_part = bulk_phase*Gtot_bulk_surface
-        IFT = np.sum((coverage_part + phase_part)/(2*area_bulk_surface)*unit_converter)
+        phase_part = gas_scaling*coverage*Gtot_surface_bulk
+        IFT = np.sum(phase_part/(area_surface_bulk)*unit_converter)
     elif phase_types[0] == "S" or phase_types[1] == "S":
-        phase_part = 0.5*coverage*Gtot_surface_bulk
+        phase_part = solid_scaling*coverage*Gtot_surface_bulk
         IFT = np.sum(phase_part/(area_surface_bulk)*unit_converter)
     return IFT
 
