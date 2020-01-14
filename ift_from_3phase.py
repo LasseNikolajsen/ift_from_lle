@@ -8,6 +8,7 @@ from functions import *
 from multiprocessing import Pool, cpu_count
 
 
+
 # Run by: python "script name" "input_file_name"(without extensions) phase type (liquid (L), gas (G), solid (S)) "user initials"(in caps)
 # Water should be called "h2o" and vacuum should be called "vacuum"
 
@@ -162,9 +163,9 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         open(output_path + "output.txt", "w").close()
     while convergence_flag < convergence_criteria:
         iterations += 1
-        
+
         # Check for forced convergence
-        if iterations == max_iterations+1 and forced_convergence:
+        if iterations >= max_iterations+1 and forced_convergence:
             print("The script ended before convergence!\nPhase 1:  {} \nCoverage: {} \nPhase 2:  {} \nTotal IFT: {}".format(phase1, coverage, phase2, IFT_tot))
             break
         
@@ -173,15 +174,15 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         write_flatsurf_file(input_file_name, "flatsurfSB", coverage, phase2, T, IFT_B_value, IFT_write_length, phase_types[1:], max_depth)
 
         if multiprocess:  # Run both COSMOtherm instances simultaneously
-            pool = Pool(processes=N_cpu)
-            pool.map(work, [[COSMOtherm_path, os.path.abspath("flatsurfAS.inp")], [COSMOtherm_path, os.path.abspath("flatsurfSB.inp")]])
-            pool.close()
-            pool.join()
-
+            print("ENTER MULTIPROCESS!")
+            pool = Pool(processes=N_cpu)  # Initiate pool
+            pool.map(work, [[COSMOtherm_path, os.path.abspath("flatsurfAS.inp")], [COSMOtherm_path, os.path.abspath("flatsurfSB.inp")]])  # Add processes 
+            pool.close()  # Can not add more processes
+            pool.join()  # Wait for all processes to complete and continue
         else:  # One at a time
             subprocess.call([COSMOtherm_path, "flatsurfAS.inp"]) 
             subprocess.call([COSMOtherm_path, "flatsurfSB.inp"])  
-        
+        print("EXIT MULTIPROCESS!")
         # Extract Gtot and Area from the .tab files
         GtotAS, GtotSA, AreaAS, AreaSA = get_Gtot_and_Area("flatsurfAS", N_compounds)
         GtotSB, GtotBS, AreaSB, AreaBS = get_Gtot_and_Area("flatsurfSB", N_compounds)

@@ -52,8 +52,8 @@ def get_user_and_path(user_name):
     """
     user_list = []
     path_list = []
-    
-    with open("Users.txt", "r") as file:
+    curr_path = os.path.dirname(os.path.abspath(__file__))
+    with open(curr_path + r"\Users.txt", "r") as file:
         text = file.read()
         user_object = re.findall("[Nn]ame:\ *\w*", text)
         path_obejct = re.findall("[Pp]ath:\ *[\S\ ]*", text)
@@ -80,7 +80,7 @@ def get_user_and_path(user_name):
             path = input("COSMOtherm path:")
             print("Name: ", name)
             print("Path:", path)
-            with open("Users.txt", "a") as file:
+            with open(curr_path + r"\Users.txt", "a") as file:
                 if path[-14:] != "cosmotherm.exe":
                     path += "cosmotherm.exe"
                 file.write("\n \n")
