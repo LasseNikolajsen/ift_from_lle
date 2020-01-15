@@ -67,7 +67,7 @@ def main():
     
     MD = 3.0
     
-    solid_scaling = 0.4
+    solid_scaling = 1.0
     
     output = ""
     

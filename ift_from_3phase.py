@@ -38,6 +38,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     """
     # Add your own path to COSMOtherm and user name in the Users.txt file
     COSMOtherm_path = get_user_and_path(user)
+    curr_path = os.path.dirname(os.path.abspath(__file__))
 
     # Initial values
     start_ift = 20.  # Start_ift * 2 is the start position in the iterative process
@@ -106,20 +107,26 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
    
     # Print initial values
     if print_statements:
+        if phase_types == "LL":
+            print("\nParameterization: {} ".format(parameter))
+        elif phase_types[0] == "G" or phase_types[1] == "G":
+            print("\nParameterization: {} \nGas scaling: {}".format(parameter, gas_scaling))
+        else:
+            print("\nParameterization: {} \nSolid scaling: {} \nMax depth: {}".format(parameter, gas_scaling, max_depth))
         print_compound_list = "[ {}".format(compound_list[0])
         for i in compound_list[1:]:
             print_compound_list += "  " + i
         print_compound_list += "]"
-        print("Parameterization: {0} \nCompounds: {1} \nPhase 1:   {2} {3} \nPhase 2:   {4} {5}".format(parameter, print_compound_list, phase1, phase_types[0], phase2, phase_types[1]))    
+        print("\nCompounds: {} \nPhase 1:   {} {} \nPhase 2:   {} {}\n".format(print_compound_list, phase1, phase_types[0], phase2, phase_types[1]))    
 
     # Create flatsurfAB file
-    write_flatsurf_file(input_file_name, "flatsurfAB", phase1, phase2, T, start_ift, IFT_write_length, phase_types, max_depth)
+    write_flatsurf_file(input_file_name, curr_path+r"\flatsurfAB", phase1, phase2, T, start_ift, IFT_write_length, phase_types, max_depth)
 
     # Run COSMOtherm
-    subprocess.call([COSMOtherm_path, "flatsurfAB.inp"])    
+    subprocess.call([COSMOtherm_path, curr_path+r"\flatsurfAB.inp"])    
 
     # Extract Gtot and across,mean for each direction in the flatsurf file
-    GtotAB, GtotBA, AreaAB, AreaBA = get_Gtot_and_Area("flatsurfAB", N_compounds)
+    GtotAB, GtotBA, AreaAB, AreaBA = get_Gtot_and_Area(curr_path+r"\flatsurfAB", N_compounds)
 
     if debug:
         print("Gtot, AB:", GtotAB, "BA:", GtotBA)
@@ -155,7 +162,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     inf_loop_counter = 0
     IFT_tot_list = []
     # Multiprocessing
-    N_cpu = cpu_count()        
+    N_cpu = cpu_count()     
     if N_cpu > 2:
         N_cpu = 2
     # Open output file
@@ -170,22 +177,20 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             break
         
         # Create flatsurf files for phase1/coverage and coverage/phase2
-        write_flatsurf_file(input_file_name, "flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types[:2], max_depth)
-        write_flatsurf_file(input_file_name, "flatsurfSB", coverage, phase2, T, IFT_B_value, IFT_write_length, phase_types[1:], max_depth)
+        write_flatsurf_file(input_file_name, curr_path+r"\flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types[:2], max_depth)
+        write_flatsurf_file(input_file_name, curr_path+r"\flatsurfSB", coverage, phase2, T, IFT_B_value, IFT_write_length, phase_types[1:], max_depth)
 
         if multiprocess:  # Run both COSMOtherm instances simultaneously
-            print("ENTER MULTIPROCESS!")
             pool = Pool(processes=N_cpu)  # Initiate pool
-            pool.map(work, [[COSMOtherm_path, os.path.abspath("flatsurfAS.inp")], [COSMOtherm_path, os.path.abspath("flatsurfSB.inp")]])  # Add processes 
+            pool.map(work, [[COSMOtherm_path, curr_path+r"\flatsurfAS.inp"], [COSMOtherm_path, curr_path+r"\flatsurfSB.inp"]])  # Add processes 
             pool.close()  # Can not add more processes
             pool.join()  # Wait for all processes to complete and continue
         else:  # One at a time
-            subprocess.call([COSMOtherm_path, "flatsurfAS.inp"]) 
-            subprocess.call([COSMOtherm_path, "flatsurfSB.inp"])  
-        print("EXIT MULTIPROCESS!")
+            subprocess.call([COSMOtherm_path, curr_path+r"\flatsurfAS.inp"]) 
+            subprocess.call([COSMOtherm_path, curr_path+r"\flatsurfSB.inp"])  
         # Extract Gtot and Area from the .tab files
-        GtotAS, GtotSA, AreaAS, AreaSA = get_Gtot_and_Area("flatsurfAS", N_compounds)
-        GtotSB, GtotBS, AreaSB, AreaBS = get_Gtot_and_Area("flatsurfSB", N_compounds)
+        GtotAS, GtotSA, AreaAS, AreaSA = get_Gtot_and_Area(curr_path+r"\flatsurfAS", N_compounds)
+        GtotSB, GtotBS, AreaSB, AreaBS = get_Gtot_and_Area(curr_path+r"\flatsurfSB", N_compounds)
 
         # Scale areas
         AreaAS, AreaSA = scale_area(compound_list, AreaAS, AreaSA, N_compounds, scale_water, scale_organic)
@@ -260,10 +265,10 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     
     # Delete files used in the calculation
     if delete_files:
-        files = ["flatsurfAB.inp", "flatsurfAB.out", "flatsurfAB.tab", "flatsurfAS.inp", "flatsurfAS.out", "flatsurfAS.tab", "flatsurfSB.inp", "flatsurfSB.out", "flatsurfSB.tab"]
+        files = [r"\flatsurfAB.inp", r"\flatsurfAB.out", r"\flatsurfAB.tab", r"\flatsurfAS.inp", r"\flatsurfAS.out", r"\flatsurfAS.tab", r"\flatsurfSB.inp", r"\flatsurfSB.out", r"\flatsurfSB.tab"]
         for i in range(len(files)):
-            if os.path.exists(files[i]):
-                os.remove(files[i])
+            if os.path.exists(curr_path+files[i]):
+                os.remove(curr_path+files[i])
     np.set_printoptions(suppress = True)
     
     # Print final result
