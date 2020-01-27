@@ -42,7 +42,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
 
     # Initial values
     start_ift = 20.  # Start_ift * 2 is the start position in the iterative process
-    IFT_write_length = 5  # Decimals when writing IFT in the flatsurf files, more than 5 triggers an error
+    IFT_write_length = 4  # Decimals when writing IFT in the flatsurf files, more than 5 triggers an error
     scale_organic = 1.  # /0.91/0.8
     R = 8.314*1e-3  # The gas constant in kJ/mol/K
     unit_converter = 1.66  # Converts to mN/m
@@ -110,7 +110,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         if phase_types == "LL":
             print("\nParameterization: {} ".format(parameter))
         elif phase_types[0] == "G" or phase_types[1] == "G":
-            print("\nParameterization: {} \nGas scaling: {}".format(parameter, gas_scaling))
+            print("\nParameterization: {} \nGas scaling: {} \nMax depth: {}".format(parameter, gas_scaling, max_depth))
         else:
             print("\nParameterization: {} \nSolid scaling: {} \nMax depth: {}".format(parameter, gas_scaling, max_depth))
         print_compound_list = "[ {}".format(compound_list[0])
@@ -220,11 +220,6 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         IFT_tot_old = IFT_tot
         IFT_tot = IFT_A_value + IFT_B_value
             
-        # Check for out of bounds total IFT to prevent COSMOtherm error
-        if IFT_tot < -95.0:
-            print("Warning: The IFT is out of bounds, the iterative process will end without convergence")
-            break
-        
         # Check convergence criteria
         if abs(IFT_tot_old-IFT_tot) < convergence_threshold:
             convergence_flag += 1
