@@ -7,7 +7,7 @@ from ift_from_3phase import calculate_IFT_tot_and_coverage
 from functions import change_input_name, get_comp_and_phases, get_N_compounds_and_T
 
 def input_file_to_IFT(phase1, phase2, phase_types, types, input_file, output_path, user, N_comps, first_comp_line_index, N_lines_p_compound, 
-                      phase1_compounds_index, phase2_compounds_index, phases, MD, solid_scaling):
+                      phase1_compounds_index, phase2_compounds_index, phases):
     with open(input_file+".inp", "r") as file: 
         text = file.readlines()
         
@@ -48,7 +48,7 @@ def input_file_to_IFT(phase1, phase2, phase_types, types, input_file, output_pat
                 last_line_modified += " " + last_line[i]
             WS_file.write(last_line_modified)
 
-    IFT, coverage = calculate_IFT_tot_and_coverage(output_path+str(phase_types)+"_input.inp", types, user, save_output_file = False, max_depth=MD, solid_scaling=solid_scaling)
+    IFT, coverage = calculate_IFT_tot_and_coverage(output_path+str(phase_types)+"_input.inp", types, user, save_output_file = False)
     return IFT, coverage
 
 def main():
@@ -64,10 +64,6 @@ def main():
     WS_IFT = 0.0  # Water solid, if 0.0 run the calculation, else use specified value
     
     OS_IFT = 0.0  # Oil solid, if 0.0 run the calculation, else use specified value
-    
-    MD = 3.0
-    
-    solid_scaling = 0.5
     
     output = ""
     
@@ -113,9 +109,6 @@ def main():
         first_value = True
         first_comp_line_index = 0
         
-        print('Max depth: {}'.format(MD))
-        print('Solid scaling: {}'.format(solid_scaling))
-        
         with open(input+".inp", "r") as file: 
             text = file.readlines()
             for i in range(len(text)):
@@ -133,15 +126,15 @@ def main():
             if WO_IFT == 0.0:
                 print("\nCalculating water/oil interface:\n")
                 WO_coverage, WO_IFT = input_file_to_IFT(water_phase, oil_phase, phase_types[water_index]+phase_types[oil_index], "LL", input, output, user, N_comps, 
-                                                        first_comp_line_index, N_lines_p_compound, water_compounds_index, oil_compounds_index, phases, MD, solid_scaling)
+                                                        first_comp_line_index, N_lines_p_compound, water_compounds_index, oil_compounds_index, phases)
             if WS_IFT == 0.0:
                 print("\nCalculating water/solid interface:\n")
                 WS_coverage, WS_IFT = input_file_to_IFT(water_phase, solid_phase, phase_types[water_index]+phase_types[solid_index], "LS", input, output, user, N_comps, 
-                                                        first_comp_line_index, N_lines_p_compound, water_compounds_index, solid_compounds_index, phases, MD, solid_scaling)
+                                                        first_comp_line_index, N_lines_p_compound, water_compounds_index, solid_compounds_index, phases)
             if OS_IFT == 0.0:
                 print("\nCalculating oil/solid interface:\n")
                 OS_coverage, OS_IFT = input_file_to_IFT(oil_phase, solid_phase, phase_types[oil_index]+phase_types[solid_index], "LS", input, output, user, N_comps,
-                                                        first_comp_line_index, N_lines_p_compound, oil_compounds_index, solid_compounds_index, phases, MD, solid_scaling)
+                                                        first_comp_line_index, N_lines_p_compound, oil_compounds_index, solid_compounds_index, phases)
 
                                                         
     youngs_eq = (OS_IFT - WS_IFT) / WO_IFT
@@ -170,7 +163,6 @@ def main():
         sys.stdout = file
         print(df)
         line = "\nContact angle [degrees]: {}\n".format(contact_angle) + "\nPhase types: {}\n".format(phase_types) 
-        line += "\nMax depth: {}".format(MD) + "\nSolid scaling: {}".format(solid_scaling)
         file.write(line)
         if not (input == ""):
             with open(input+".inp", "r") as input:

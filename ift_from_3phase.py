@@ -7,30 +7,22 @@ import re
 from functions import *
 from multiprocessing import Pool, cpu_count
 
-
-
 # Run by: python "script name" "input_file_name"(without extensions) phase type (liquid (L), gas (G), solid (S)) "user initials"(in caps)
-# Water should be called "h2o" and vacuum should be called "vacuum"
-
 
 def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, multiprocess = True, delete_files = True, 
-                                   save_output_file = True, forced_convergence = False, max_iterations = 3, max_depth = 3.0, solid_scaling = 0.5, gas_scaling = 0.5):
+                                   save_output_file = True, max_iterations = 3):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
     Args: 
         input_file_name: The name of the input file that the code should run either without extension, with extension or a path, as a string 
         phase_types: Input phase types of IFT calculation one char for each phase as a string (L for liquid, G for gas, S for solid)
-        user: The user initials in caps as a string
+        user: The user initials as written in the
         print_statements: Print information from each iteration, boolean, default = True
         debug: Print additional information from each COSMOtherm calculation, boolean, default = False
         multiprocess: Run COSMOtherm simultaneously in the while loop, boolean, default = True
         delete_files: Delete the intermediate files created during the calculation, boolean, default = True
         save_output_file: Save the direct output of the calculation, boolean, default = True
-        forced_convergence: Force the iterative process to end prematurely, boolean, default = False
-        max_iterations: The maximum amount of iterations for the iterative process if forced convergence is set to True, max_iterations is an integer
-        max_depth: The depth in Angstrom allowed in the solid-liquid calculation, default = 3.0
-        solid_scaling: The amount of Gtot used in the IFT calculation for solids, default = 0.5
-        gas_scaling: The amount of Gtot used in the IFT calculation for gases, default = 0.5        
+        max_iterations: The maximum amount of iterations for the iterative process, 0 = no upper bound, integer, default = 0      
         
     Return:
         coverage: The surface coverage between the two input phases as a numpy array
@@ -38,7 +30,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     """
     # Add your own path to COSMOtherm and user name in the Users.txt file
     COSMOtherm_path = get_user_and_path(user)
-    curr_path = os.path.dirname(os.path.abspath(__file__))
+    curr_path = os.path.abspath(__file__)[:-len(__file__)+2]  # Current path without file name
 
     # Initial values
     start_ift = 20.  # Start_ift * 2 is the start position in the iterative process
@@ -56,7 +48,12 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
     convergence_criteria = 3  # Number of iterations with an IFT difference under convergence_threshold
     convergence_threshold = 1e-3
     inf_loop_precision = 3  # The precision for the infinite loop check, high number equals less likely to occur
-
+    # Solids
+    max_depth = 3.0
+    solid_scaling = 0.5
+    # Gas
+    gas_scaling = 0.5
+    
     # Output precision
     np.set_printoptions(formatter={'float': '{: 0.4f}'.format}, suppress = True)
     float_precision = 4
@@ -110,7 +107,7 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         if phase_types == "LL":
             print("\nParameterization: {} ".format(parameter))
         elif phase_types[0] == "G" or phase_types[1] == "G":
-            print("\nParameterization: {} \nGas scaling: {} \nMax depth: {}".format(parameter, gas_scaling, max_depth))
+            print("\nParameterization: {} \nGas scaling: {}".format(parameter, gas_scaling))
         else:
             print("\nParameterization: {} \nSolid scaling: {} \nMax depth: {}".format(parameter, gas_scaling, max_depth))
         print_compound_list = "[ {}".format(compound_list[0])
@@ -120,13 +117,13 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         print("\nCompounds: {} \nPhase 1:   {} {} \nPhase 2:   {} {}\n".format(print_compound_list, phase1, phase_types[0], phase2, phase_types[1]))    
 
     # Create flatsurfAB file
-    write_flatsurf_file(input_file_name, curr_path+r"\flatsurfAB", phase1, phase2, T, start_ift, IFT_write_length, phase_types, max_depth)
+    write_flatsurf_file(input_file_name, curr_path+"flatsurfAB", phase1, phase2, T, start_ift, IFT_write_length, phase_types, max_depth)
 
     # Run COSMOtherm
-    subprocess.call([COSMOtherm_path, curr_path+r"\flatsurfAB.inp"])    
+    subprocess.call([COSMOtherm_path, curr_path+"flatsurfAB.inp"])    
 
     # Extract Gtot and across,mean for each direction in the flatsurf file
-    GtotAB, GtotBA, AreaAB, AreaBA = get_Gtot_and_Area(curr_path+r"\flatsurfAB", N_compounds)
+    GtotAB, GtotBA, AreaAB, AreaBA = get_Gtot_and_Area(curr_path+"flatsurfAB", N_compounds)
 
     if debug:
         print("Gtot, AB:", GtotAB, "BA:", GtotBA)
@@ -167,30 +164,31 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
         N_cpu = 2
     # Open output file
     if save_output_file:
-        open(output_path + "output.txt", "w").close()
+        line = ""
+        for i in range(len(phase1)):
+            line += "Coverage_{}, ".format(i)
+        line += "IFT\n"
+        with open(input_file_name.split(".")[0] + "_output.txt", "w") as output:
+            output.write(line)
     while convergence_flag < convergence_criteria:
         iterations += 1
 
-        # Check for forced convergence
-        if iterations >= max_iterations+1 and forced_convergence:
-            print("The script ended before convergence!\nPhase 1:  {} \nCoverage: {} \nPhase 2:  {} \nTotal IFT: {}".format(phase1, coverage, phase2, IFT_tot))
-            break
-        
+       
         # Create flatsurf files for phase1/coverage and coverage/phase2
-        write_flatsurf_file(input_file_name, curr_path+r"\flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types[:2], max_depth)
-        write_flatsurf_file(input_file_name, curr_path+r"\flatsurfSB", coverage, phase2, T, IFT_B_value, IFT_write_length, phase_types[1:], max_depth)
+        write_flatsurf_file(input_file_name, curr_path+"flatsurfAS", phase1, coverage, T, IFT_A_value, IFT_write_length, phase_types[:2], max_depth)
+        write_flatsurf_file(input_file_name, curr_path+"flatsurfSB", coverage, phase2, T, IFT_B_value, IFT_write_length, phase_types[1:], max_depth)
 
         if multiprocess:  # Run both COSMOtherm instances simultaneously
             pool = Pool(processes=N_cpu)  # Initiate pool
-            pool.map(work, [[COSMOtherm_path, curr_path+r"\flatsurfAS.inp"], [COSMOtherm_path, curr_path+r"\flatsurfSB.inp"]])  # Add processes 
+            pool.map(work, [[COSMOtherm_path, curr_path+"flatsurfAS.inp"], [COSMOtherm_path, curr_path+"flatsurfSB.inp"]])  # Add processes 
             pool.close()  # Can not add more processes
             pool.join()  # Wait for all processes to complete and continue
         else:  # One at a time
-            subprocess.call([COSMOtherm_path, curr_path+r"\flatsurfAS.inp"]) 
-            subprocess.call([COSMOtherm_path, curr_path+r"\flatsurfSB.inp"])  
+            subprocess.call([COSMOtherm_path, curr_path+"flatsurfAS.inp"]) 
+            subprocess.call([COSMOtherm_path, curr_path+"flatsurfSB.inp"])  
         # Extract Gtot and Area from the .tab files
-        GtotAS, GtotSA, AreaAS, AreaSA = get_Gtot_and_Area(curr_path+r"\flatsurfAS", N_compounds)
-        GtotSB, GtotBS, AreaSB, AreaBS = get_Gtot_and_Area(curr_path+r"\flatsurfSB", N_compounds)
+        GtotAS, GtotSA, AreaAS, AreaSA = get_Gtot_and_Area(curr_path+"flatsurfAS", N_compounds)
+        GtotSB, GtotBS, AreaSB, AreaBS = get_Gtot_and_Area(curr_path+"flatsurfSB", N_compounds)
 
         # Scale areas
         AreaAS, AreaSA = scale_area(compound_list, AreaAS, AreaSA, N_compounds, scale_water, scale_organic)
@@ -254,20 +252,34 @@ def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_sta
             else:
                 print("Coverage_B:", coverage_B, "IFT_B:", IFT_B, "IFT_B_value", IFT_B_value)
             print("\n")
+            
         if save_output_file:
-            with open(output_path + "output.txt", "a") as file:
+            with open(input_file_name.split(".")[0] + "_output.txt", "a") as file:
                 file.write(", ".join(map(str,coverage))+", {}\n".format(IFT_tot))
-    
+        
+        # Check for forced convergence
+        if iterations == max_iterations:
+            print("The script ended before convergence!\nPhase 1:  {} \nCoverage: {} \nPhase 2:  {} \nTotal IFT: {}".format(phase1, coverage, phase2, IFT_tot))
+            break
+        
+        
     # Delete files used in the calculation
+    files = ["flatsurfAB.inp", "flatsurfAB.out", "flatsurfAB.tab", "flatsurfAS.inp", "flatsurfAS.out", "flatsurfAS.tab", "flatsurfSB.inp", "flatsurfSB.out", "flatsurfSB.tab"]
     if delete_files:
-        files = [r"\flatsurfAB.inp", r"\flatsurfAB.out", r"\flatsurfAB.tab", r"\flatsurfAS.inp", r"\flatsurfAS.out", r"\flatsurfAS.tab", r"\flatsurfSB.inp", r"\flatsurfSB.out", r"\flatsurfSB.tab"]
         for i in range(len(files)):
             if os.path.exists(curr_path+files[i]):
                 os.remove(curr_path+files[i])
+    else:
+        if not os.path.exists(input_file_name.split(".")[0]+"_Gtot_files"):
+            os.makedirs(input_file_name.split(".")[0]+"_Gtot_files")
+        for file in files:
+            if os.path.exists(curr_path+file):
+                os.replace(curr_path+file, input_file_name.split(".")[0]+"_Gtot_files\\"+file)
+                
     np.set_printoptions(suppress = True)
-    
+        
     # Print final result
-    if iterations < max_iterations or not forced_convergence:
+    if iterations > max_iterations:
         print("The script has converged!\nPhase 1:  {} \nCoverage: {} \nPhase 2:  {} \nTotal IFT: {}".format(phase1, coverage, phase2, IFT_tot))
     
     return coverage, IFT_tot
