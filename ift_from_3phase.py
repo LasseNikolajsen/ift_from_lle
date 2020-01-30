@@ -10,7 +10,7 @@ from multiprocessing import Pool, cpu_count
 # Run by: python "script name" "input_file_name"(without extensions) phase type (liquid (L), gas (G), solid (S)) "user initials"(in caps)
 
 def calculate_IFT_tot_and_coverage(input_file_name, phase_types, user, print_statements = True, debug = False, multiprocess = True, delete_files = True, 
-                                   save_output_file = True, max_iterations = 3):
+                                   save_output_file = True, max_iterations = 0):
     """ Calculate the total interfacial tension of the two input phases and 
         the surface coverage between the phases.
     Args: 
