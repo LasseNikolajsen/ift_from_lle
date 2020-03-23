@@ -17,8 +17,7 @@ debug: Additional information in every iteration, default = False
 multiprocess: Using 2 cores during while loop if possible, default = True
 delete_files: Deleting files produced by COSMOtherm when the calculation is complete, default = True
 save_output_file: Save the raw output file from the calculation, defalut = True
-forced_convergence: Force the script to end the iterative process at max_iterations, default = False
-max_iterations: Sets the maximum iterations in the iterative process if forced_convergence is set to True, as an integer
+max_iterations: Sets the maximum iterations in the iterative process as an integer, 0 means run til convergence, default = 0
 
 There are two support scripts, which can help in certain calculation situations.
 First is the run_multi_L_phases.py, which runs n liquid phases and prints the results in an easy to overview output file, including the input file. The input file can still just be generated as a LLE input from COSMOtherm.
