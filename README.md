@@ -1,6 +1,6 @@
 # ift_from_lle
 IFT and surface coverage calculations
-COSMOtherm is required to calculate solvation parameters, use a COSMO parameterization listed in check_parameterization in the main script
+COSMOtherm is required to calculate solvation parameters, use a COSMO parameterization listed in check_parameterization in functions.py
 
 Call the main script by:
 python "script_name" "COSMO_input_file" "phase_types "user_name"
