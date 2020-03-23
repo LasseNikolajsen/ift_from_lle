@@ -4,3 +4,5 @@
 *.out
 *.tab
 test_function.py
+output.txt
+__init__.py

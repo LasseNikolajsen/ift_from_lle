@@ -67,7 +67,7 @@ def last_line_conc(last_line, conc):
 def main():
     initials = "LVND"
     phase_types = ""  # Leave empty for only liquid phases
-    error_attempts = 2
+    error_attempts = 2  # Number of errors the script can encounter before terminating, useful for longer calculations
     
     
     pd.options.display.float_format = '{:.10f}'.format

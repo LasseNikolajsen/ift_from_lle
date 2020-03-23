@@ -4,7 +4,7 @@ import os
 import numpy as np
 import re
 
-# This document includes all the functions called in the IFT calculation script and some called in the run_phases support script
+# This document includes all the functions called in the IFT calculation script and some called in the run_multi_L_phases support script
 
 def get_liquid_index(phase1, phase2, phase_types):
     """ Get the indecies where the compounds are above 0.0 in the liquid phase
@@ -25,13 +25,13 @@ def get_liquid_index(phase1, phase2, phase_types):
         for i in range(len(phase1)):
             liquid_index.append(i)
     
-    elif phase_types == "SL":
+    elif phase_types == "SL" or phase_types == "GL":
         for i in range(len(phase1)):
             if phase1[i] > 0.0:
                 solid_index.append(i)
             else:
                 liquid_index.append(i)
-    elif phase_types == "LS":
+    elif phase_types == "LS" or phase_types == "LG":
         for i in range(len(phase2)):
             if phase2[i] > 0.0:
                 solid_index.append(i)
@@ -52,8 +52,8 @@ def get_user_and_path(user_name):
     """
     user_list = []
     path_list = []
-    
-    with open("Users.txt", "r") as file:
+    curr_path = os.path.dirname(os.path.abspath(__file__))
+    with open(curr_path + r"\Users.txt", "r") as file:
         text = file.read()
         user_object = re.findall("[Nn]ame:\ *\w*", text)
         path_obejct = re.findall("[Pp]ath:\ *[\S\ ]*", text)
@@ -80,7 +80,7 @@ def get_user_and_path(user_name):
             path = input("COSMOtherm path:")
             print("Name: ", name)
             print("Path:", path)
-            with open("Users.txt", "a") as file:
+            with open(curr_path + r"\Users.txt", "a") as file:
                 if path[-14:] != "cosmotherm.exe":
                     path += "cosmotherm.exe"
                 file.write("\n \n")
@@ -170,17 +170,19 @@ def check_parameterization(input_file_name):
         scale_water: Water scaling parameter as a float
     """
     parameter = ["BP_TZVP_C30_1601", "BP_TZVP_C30_1501", "BP_TZVP_C30_1401", "BP_TZVP_C30_1301", 
-        "BP_TZVP_C21_0111", "DMOL3_PBE_C30_1301", "BP_TZVPD_FINE_C30_1501", "BP_TZVPD_FINE_C30_1401", 
-        "BP_TZVPD_FINE_C30_1301", "add_parameter_here"]
+        "BP_TZVP_C21_0111", "DMOL3_PBE_C30_1301", "BP_TZVPD_FINE_19", "BP_TZVPD_FINE_C30_1601", 
+        "BP_TZVPD_FINE_C30_1501", "BP_TZVPD_FINE_C30_1401", "BP_TZVPD_FINE_HB2012_C30_1301", "add_parameter_here"]
     parameterization = [1/0.625, 1/0.25475*0.43061, 1/0.26753*0.43061, 1/0.25*0.43061,
-        1/0.26697*0.43061, 1/0.2641*0.43061, 1, 1/0.31733*0.43061, 1/0.28649*0.43061, 
+        1/0.26697*0.43061, 1/0.2641*0.43061, 1.0, 1.0, 1.0, 1/0.31733*0.43061, 1/0.28649*0.43061, 
         "add_parameterization_here"]
     with open(input_file_name+".inp","r") as file:
-        lines = file.readlines()
-        try:
-            index = parameter.index(lines[0].split()[2].split(".")[0])
+        text = file.read()
+        para_obj = re.findall("ctd\ *=\ *\w*", text)
+        para = para_obj[0].split()[2]
+        if para in parameter:
+            index = parameter.index(para)
             scale_water = parameterization[index]
-        except:
+        else:
             print("Warning: No matching parameterization found.\
             \nGo to check_parameterization to add new parameterizations.")
             quit()
@@ -215,7 +217,7 @@ def check_phase_types(types, N_phases):
         else:
             continue
 
-    # Format the input for future implementation
+    # Format the input for future use
     types_formated = ""
     for i in types:
         if re.findall("[Ll]", i) != []:
@@ -241,13 +243,16 @@ def get_N_compounds_and_T(input_file_name):
         N_compounds: Number of compounds as a float
         T: Temperature as floats
     """
+    # Implement Fahrenheit
     with open(input_file_name+".inp","r") as file:
         text = file.read()
         
-        obj_T = re.findall(r"t[ck]=[0-9]+\.*[0-9]*", text)  # Find tc= or tk=
-        T_list = obj_T[0].split("=")
-        if T_list[0] == 'tc':
-            T = float(T_list[1])+273.15
+        T_obj = re.findall(r"t[ckF]=[0-9]+\.*[0-9]*", text)  # Find tc=, tk= or tF=
+        T_list = T_obj[0].split("=")
+        if T_list[0] == "tc":
+            T = float(T_list[1])+273.15  # From Celsius to Kelvin
+        elif T_list[0] == "tF":
+            T = (float(T_list[1])-32)*(5/9) + 273.15  # From Fahrenheit to Kelvin
         else:
             T = float(T_list[1]) 
 
@@ -269,6 +274,7 @@ def get_comp_and_phases_for_LL(input_file_name, N_compounds):
         phase1: Phase 1 as a np.array of floats
         phase2: Phase 2 as a np.array of floats
     """
+    # Use Re? Return phases as a list and combine the two functions
     compound_list = []
     phase1 = []
     phase2 = []
@@ -337,13 +343,13 @@ def write_flatsurf_file(input_file_name, output_input_file_name, phase1, phase2,
         phase2: Second phase as a list
         T: Temperature as a float
         IFT: IFT as a float
-        phase_types: Type of phases (Liquid L, Gas, G, Solid S) as a string
+        phase_types: Type of phases (Liquid L, Gas, G, Solid S) as a string with length 2
     
     Return:
         None
     """
     max_depth_str = ""
-    if phase_types[0] == "S" or phase_types[1] == "S":
+    if phase_types[0] == "S" or phase_types[1] == "S":# or phase_types[0] == "G" or phase_types[1] == "G":
         max_depth_str = "maxdepth={} ".format(max_depth)
     
     with open(input_file_name+".inp", "r") as file:  # Read the inital input file
@@ -382,8 +388,8 @@ def get_Gtot_and_Area(input_file_name, N_compounds):
             # find a line of numbers with more than 4 numbers
             obj_ABtab = re.findall(r"(?:[-+]?\d*\.\d*\s*){4,}", text)  
             # There is 2 times the N_compounds lines in obj_ABtab.
-            # The first N_compounds lines are from one side, the rest are
-            # from the other. Gtot is the index 1 and across,mean is index 2.
+            # The first N_compounds lines are from one side, the rest are from the other. 
+            # Gtot is index 1 and across,mean is index 2.
             GtotAB.append(float(obj_ABtab[i].split()[1]))
             GtotBA.append(float(obj_ABtab[i+N_compounds].split()[1]))
             AreaAB.append(float(obj_ABtab[i].split()[2]))
@@ -411,10 +417,10 @@ def scale_area(compound_list, AreaAB, AreaBA, N_compounds, scale_water, scale_or
         AreaBA: Scaled area from the other side as a list of floats
     """
     for i in range(N_compounds):
-        if (compound_list[i]=='h2o'):  # Scale water
+        if "h2o" in compound_list[i]:  # Scale water
             AreaAB[i]*=scale_water;
             AreaBA[i]*=scale_water;
-        elif (compound_list[i]=='vacuum'):  # Scale vacuum
+        elif "vacuum" in compound_list[i]:  # Scale vacuum
             AreaAB[i]=1e1000
             AreaBA[i]=1e1000
         else:
@@ -445,47 +451,74 @@ def calculate_coverage(phase, Gtot, R, T, liquid_index):
     return coverage 
     
     
-def calculate_IFT(bulk_phase, Gtot_phase_bulk_surface, Gtot_phase_surface_bulk, area_phase_bulk_surface, area_phase_surface_bulk, 
-                  coverage, R, T, unit_converter, phase_types, liquid_index):
-    """ Calculate IFT between two phases for either Liquid (L) - Surface Coverage (C)c Gas (G) - Surface Coverage (C) or Solid (S)
+def calculate_CF(coverage, coverage_new, coverage_damping, max_CF, liquid_index):
+    """ Calculate coverage factor (CF) and replace the value if it is too high or too low
+    
+    Args:
+        coverage: Coverage as an array
+        coverage_new: Coverage A and/or Coverage B, if multiple coverages, input as a list of arrays otherwise input as a single array
+        coverage_damping: The coverage damping
+        max_CF: The maximum allowed step length for the coverage per iteration
+        liquid_index: The index for the liquid phase, if a solid phase is present
+        
+    Return:
+        coverage: Surface coverage as an array
+    """
+    if type(coverage_new) == list:
+        CF = np.power((coverage_new[0][liquid_index]*coverage_new[1][liquid_index]/coverage[liquid_index]**2), coverage_damping)
+        CF[CF>max_CF] = max_CF
+        CF[CF<1/max_CF] = 1/max_CF
+        coverage[liquid_index] = coverage[liquid_index]*CF
+        coverage /= np.sum(coverage)
+    else:
+        CF = np.power((coverage_new[liquid_index]/coverage[liquid_index]), coverage_damping)
+        CF[CF>max_CF] = max_CF
+        CF[CF<1/max_CF] = 1/max_CF
+        coverage[liquid_index] = coverage[liquid_index]*CF
+        coverage /= np.sum(coverage)
+    return coverage 
+    
+    
+def calculate_IFT(bulk_phase, Gtot_bulk_surface, Gtot_surface_bulk, area_bulk_surface, area_surface_bulk, 
+                  coverage, R, T, unit_converter, phase_types, liquid_index, solid_scaling, gas_scaling):
+    """ Calculate IFT between two phases for either Liquid (L), Gas (G) or Solid (S)
     
     Args:
         bulk_phase: Phase as a list
-        Gtot_phase_bulk_surface: Gtot from the bulk phase to the surface as a list
-        Gtot_phase_surface_bulk: Gtot from the surface to the bulk face as a list
-        area_phase_bulk_surface: Area from the bulk phase to the surface as a list
-        area_phase_surface_bulk: Area from the surface to the bulk face as a list
+        Gtot_bulk_surface: Gtot from the bulk phase to the surface as a list
+        Gtot_surface_bulk: Gtot from the surface to the bulk face as a list
+        area_bulk_surface: Area from the bulk phase to the surface as a list
+        area_surface_bulk: Area from the surface to the bulk face as a list
         coverage: Surface coverage from the phase as a list
         R: The gas constant in kj/mol/K as a float
         T: The temperature in Kelvin as a float
         unit_converter: Converts the output to mN/m as a float
-        phase_types: Type of phases (Liquid L, Gas, G, Solid S, Coverge C) as a string
+        phase_types: Type of phases (Liquid L, Gas G, Solid S, Coverage C) as a string
         
     Return:
         IFT: The sum of all interfacial tensions between phase and surface as a float
     """
     if phase_types[0] == "L" or phase_types[1] == "L":
-        coverage_part = coverage[liquid_index]*(Gtot_phase_bulk_surface[liquid_index]-R*T*np.log(bulk_phase[liquid_index])+R*T*np.log(coverage[liquid_index]))
-        phase_part = bulk_phase[liquid_index]*Gtot_phase_bulk_surface[liquid_index]
-        IFT = np.sum((coverage_part + phase_part)/(2*area_phase_bulk_surface[liquid_index])*unit_converter)
+        coverage_part = coverage[liquid_index]*(Gtot_bulk_surface[liquid_index]-R*T*np.log(bulk_phase[liquid_index])+R*T*np.log(coverage[liquid_index]))
+        phase_part = bulk_phase[liquid_index]*Gtot_bulk_surface[liquid_index]
+        IFT = np.sum((coverage_part + phase_part)/(2*area_bulk_surface[liquid_index])*unit_converter)
     elif phase_types[0] == "G" or phase_types[1] == "G":
-        coverage_part = coverage*(Gtot_phase_bulk_surface-R*T*np.log(bulk_phase)+R*T*np.log(coverage))
-        phase_part = bulk_phase*Gtot_phase_bulk_surface
-        IFT = np.sum((coverage_part + phase_part)/(2*area_phase_bulk_surface)*unit_converter)
+        phase_part = gas_scaling*coverage*Gtot_surface_bulk
+        IFT = np.sum(phase_part/(area_surface_bulk)*unit_converter)
     elif phase_types[0] == "S" or phase_types[1] == "S":
-        phase_part = coverage*Gtot_phase_surface_bulk
-        IFT = np.sum(phase_part/(2*area_phase_surface_bulk)*unit_converter)
+        phase_part = solid_scaling*coverage*Gtot_surface_bulk
+        IFT = np.sum(phase_part/(area_surface_bulk)*unit_converter)
     return IFT
 
     
-def calculate_IFT_dampning(IFT, IFT_value, IFT_max_diff, IFT_dampning):
+def calculate_IFT_damping(IFT, IFT_value, IFT_max_diff, IFT_damping):
     """ Calculate IFT direction and dampen the value
     
     Args:
         IFT: As calculated by calculate_IFT as a float
         IFT_value: IFT_value as a float
         IFT_max_diff: The maximum difference i.e. step size as a float or integer
-        IFT_dampning: The dampning effect as a float
+        IFT_damping: The damping effect as a float
     
     Return:
         IFT_value with 6 decimals, truncated to prevent memory error in COSMOthermX18
@@ -497,5 +530,5 @@ def calculate_IFT_dampning(IFT, IFT_value, IFT_max_diff, IFT_dampning):
     else:
         difference = IFT-IFT_value
     
-    IFT_value = IFT_value+difference*IFT_dampning
+    IFT_value = IFT_value+difference*IFT_damping
     return IFT_value

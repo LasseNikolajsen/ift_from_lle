@@ -57,7 +57,9 @@ def main():
     
     phase_types = "WOS"  # Water (O), Oil (O), Solid (S)
     
-    WO_IFT = 0.0  # Water oil, if 0.0 run the calculation, else use specified value
+    user = "LVND"
+    # Para16: 46.87028435910373 Para16_FINE: 52.06303714647714 Para15_FINE: 54.709478468253785 Para13: 53.03821814699668 Para13_FINE: 52.1884335114052
+    WO_IFT = 52.06303714647714 # Water oil, if 0.0 run the calculation, else use specified value
     
     WS_IFT = 0.0  # Water solid, if 0.0 run the calculation, else use specified value
     
@@ -102,17 +104,13 @@ def main():
             if solid_phase[i] != 0.0:
                 solid_compounds_index.append(i)
         
-        
         N_lines_p_compound = []   
         count = 0
         first_value = True
         first_comp_line_index = 0
         
-        
         with open(input+".inp", "r") as file: 
             text = file.readlines()
-            
-            
             for i in range(len(text)):
                 if "VPfile" in text[i] or "liq_ex" in text[i]:
                     if first_comp_line_index == 0:
@@ -127,40 +125,29 @@ def main():
 
             if WO_IFT == 0.0:
                 print("\nCalculating water/oil interface:\n")
-                WO_coverage, WO_IFT = input_file_to_IFT(water_phase, oil_phase, phase_types[water_index]+phase_types[oil_index], "LL", input, output, "LVND", N_comps, 
+                WO_coverage, WO_IFT = input_file_to_IFT(water_phase, oil_phase, phase_types[water_index]+phase_types[oil_index], "LL", input, output, user, N_comps, 
                                                         first_comp_line_index, N_lines_p_compound, water_compounds_index, oil_compounds_index, phases)
             if WS_IFT == 0.0:
                 print("\nCalculating water/solid interface:\n")
-                WS_coverage, WS_IFT = input_file_to_IFT(water_phase, solid_phase, phase_types[water_index]+phase_types[solid_index], "LS", input, output, "LVND", N_comps, 
+                WS_coverage, WS_IFT = input_file_to_IFT(water_phase, solid_phase, phase_types[water_index]+phase_types[solid_index], "LS", input, output, user, N_comps, 
                                                         first_comp_line_index, N_lines_p_compound, water_compounds_index, solid_compounds_index, phases)
             if OS_IFT == 0.0:
                 print("\nCalculating oil/solid interface:\n")
-                OS_coverage, OS_IFT = input_file_to_IFT(oil_phase, solid_phase, phase_types[oil_index]+phase_types[solid_index], "LS", input, output, "LVND", N_comps,
+                OS_coverage, OS_IFT = input_file_to_IFT(oil_phase, solid_phase, phase_types[oil_index]+phase_types[solid_index], "LS", input, output, user, N_comps,
                                                         first_comp_line_index, N_lines_p_compound, oil_compounds_index, solid_compounds_index, phases)
 
-    # n-decane
-    # IFT_W_S = 64.9449187143066
-    # IFT_O_S = -12.500284722858611
-    # IFT_O_W = 46.870301105580424
-    
-    # 1-octanol
-    # IFT_W_S = -18.626208743461117
-    # IFT_O_S = 10.935139924034504
-    # IFT_O_W = 46.870301105580424
-
-    # acetic acid
-    # IFT_W_S = -14.774634533876746
-    # IFT_O_S = 9.751316977037327
-    # IFT_O_W = 46.870301105580424
-    
-    
+                                                        
     youngs_eq = (OS_IFT - WS_IFT) / WO_IFT
     print(youngs_eq)
     if youngs_eq > 1:
-        print("Error: Can not take arccos to a number ouside the range [-1,1]. Please check the calculated energies.")
+        print("Warning: Calculated number out of range [-1,1].")
         print("The calculated number is {}.".format(youngs_eq))
+        print("Using 1 for the angle calculation instead")
         youngs_eq = 1
     elif youngs_eq < -1:
+        print("Warning: Calculated number out of range [-1,1].")
+        print("The calculated number is {}.".format(youngs_eq))
+        print("Using -1 for the angle calculation instead")
         youngs_eq = -1
     
     contact_angle = np.arccos(youngs_eq) * (180/np.pi)
@@ -175,12 +162,12 @@ def main():
     with open(output+"IFT_contact_angle_output.txt", 'w') as file:
         sys.stdout = file
         print(df)
-        line = "\nContact angle [degrees]: {}".format(contact_angle) + "\nPhase types: {}\n".format(phase_types)
+        line = "\nContact angle [degrees]: {}\n".format(contact_angle) + "\nPhase types: {}\n".format(phase_types) 
         file.write(line)
         if not (input == ""):
             with open(input+".inp", "r") as input:
                 text = input.read()
-                file.write("\n\n\nInitial input:\n")
+                file.write("\n\nInitial input:\n")
                 file.write(text)
         if path.exists(output+"WO_input.inp"):
             with open(output+"WO_input.inp", "r") as input:
