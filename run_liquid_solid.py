@@ -53,7 +53,7 @@ def input_file_to_IFT(phase1, phase2, phase_types, types, input_file, output_pat
 
 def main():
     
-    # Use a 3 phase liquid extraction COSMOtherm input file and specify which phases are water, oil and sold.
+    # Use a 3 phase liquid extraction COSMOtherm input file and specify which phases are water, oil and solid.
     
     phase_types = "WOS"  # Water (O), Oil (O), Solid (S)
     
