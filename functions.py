@@ -121,15 +121,13 @@ def change_input_name(name):
         path: The path to the input file if it has one
     """
     path = ""
-    # Changes .\input_file.inp -> input_file
-    if name[:2] == ".\\" and name[len(name)-4:] == ".inp":
-        name = name[2:len(name)-4]
-        
     # If input file is a path on windows
     if re.findall("\w:", name) != [] and name[len(name)-4:] == ".inp":
         name = name[:len(name)-4]
         path = os.path.split(name)[0]+"\\"
-        
+    # Changes .\input_file.inp -> input_file  
+    elif name[len(name)-4:] == ".inp":
+        name = name[:len(name)-4]
     return name, path
     
     
